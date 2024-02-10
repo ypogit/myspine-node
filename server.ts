@@ -2,8 +2,6 @@ import express, { RequestHandler } from 'express'
 import cors, { CorsOptions } from 'cors'
 import fs from 'fs'
 import https from 'https'
-import path from 'path'
-import { register } from 'tsconfig-paths'
 
 // import helmet from 'helmet'
 // import Ajv from 'ajv'
@@ -12,8 +10,6 @@ import { register } from 'tsconfig-paths'
 // import SQLiteStore from 'better-sqlite3-session-store';
 
 import "dotenv/config"
-
-register()
 
 type StaticOrigin = boolean | string | RegExp | Array<boolean | string | RegExp>
 type OriginCallback = (err: Error | null, origin?: boolean) => void
