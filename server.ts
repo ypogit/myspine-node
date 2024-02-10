@@ -1,5 +1,6 @@
 import cors, { CorsOptions } from 'cors'
 import express from 'express'
+import expressLimiter from 'express-limiter'
 import fs from 'fs'
 import https from 'https'
 import helmet, { HelmetOptions } from 'helmet'
@@ -78,6 +79,7 @@ const helmetOptions: HelmetOptions = {
     preload: true 
     // Add HSTS policy to browser
   },
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
   xPoweredBy: false,
   // Remove xPowered by that Express.js sets by default
   // Obscure tech stack slowing down the recon phase of the attack
@@ -85,7 +87,6 @@ const helmetOptions: HelmetOptions = {
     // xContentTypeOptions: nosniff
     // xDnsPrefetchControl: off
     // xXssProtection: 0
-    // referrerPolicy: 'same-origin'
 }
 
 app.use(
