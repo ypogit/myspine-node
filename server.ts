@@ -1,9 +1,8 @@
-import express, { RequestHandler } from 'express'
 import cors, { CorsOptions } from 'cors'
+import express from 'express'
 import fs from 'fs'
 import https from 'https'
-
-// import helmet from 'helmet'
+import helmet, { HelmetOptions } from 'helmet'
 // import Ajv from 'ajv'
 // import rateLimit from 'express-limiter';
 // import session from 'express-session';
@@ -45,10 +44,57 @@ const corsOptions: CorsOptions = {
   optionsSuccessStatus: 200,
 }
 
-app.use(cors(corsOptions))
+const helmetOptions: HelmetOptions = {
+  contentSecurityPolicy: {
+    // Mitigate many attacks, preventing XXS
+    directives:  helmet.contentSecurityPolicy.getDefaultDirectives()
+    // Default values
+      // default-src: 'self'
+      // base-uri: 'self'
+      // font-src: 'self' https: data:
+      // form-action: 'self'
+      // frame-ancestors: 'self'
+      // img-src: 'self' data:
+      // object-src: 'none'
+      // script-src: 'self'
+      // script-src-attr: 'none'
+      // style-src: 'self' https: 'unsafe-inline'
+      // upgrade-insecure-requests
+  },
+  crossOriginEmbedderPolicy: { policy: 'require-corp' },
+  // Controls what resources can be loaded x-origin
+  // Requires all x-origin resources loaded within the page's content use CORS
+  crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
+  // Protect against x-origin window and iframes related attacks
+  // Allow document to be accessed by documents from the same origin
+  // And allow document from x-origin iframes to open popups
+  crossOriginResourcePolicy: { policy: 'same-origin' },
+  // Browser blocks no-cros x-origin/ x-site requests to the same origin
+  strictTransportSecurity: { 
+  // Browser prefers HTTPS
+  // Default values
+      // maxAge: 155520000 (180 days)
+      // includeSubdomains: true
+    preload: true 
+    // Add HSTS policy to browser
+  },
+  xPoweredBy: false,
+  // Remove xPowered by that Express.js sets by default
+  // Obscure tech stack slowing down the recon phase of the attack
+  // Other default options:
+    // xContentTypeOptions: nosniff
+    // xDnsPrefetchControl: off
+    // xXssProtection: 0
+    // referrerPolicy: 'same-origin'
+}
+
+app.use(
+  cors(corsOptions), 
+  helmet(helmetOptions)
+)
 
 app.get("/", (_req, res) => {
-  res.send("My Spine: Powered by Node.js")
+  res.send("Ouch my spine.")
 })
 
 server.listen(process.env.PORT, () => {
