@@ -37,7 +37,6 @@ For development and production stages
 6. **express-session** : Session management for Express.js
 7. **helmet** : Secure HTTP response headers against known CSRF attacks and other known vulnerabilities
 8. **nodemon** : Automatic tool that watches, restarts and executes direct JavaScript
-9. **webpack && ts-loader** : Bundler and compiler in tandem for code-splitting and tree-shaking, faster compile times and better performance
 
 ## Other devDependencies
 For development stage
