@@ -1,13 +1,13 @@
 {
   "name": "myspine-node",
   "version": "1.0.0",
-  "main": "dist/server.js",
   "type": "module",
+  "main": "dist/src/server.js",
   "license": "MIT",
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.18.2",
-    "express-limiter": "^1.6.1",
+    "express-rate-limit": "^7.1.5",
     "express-session": "^1.18.0",
     "helmet": "^7.1.0",
     "knex": "^3.1.0",
@@ -17,13 +17,19 @@
   "scripts": {
     "test": "jest",
     "build": "tsc",
-    "start": "node dist/server.js",
-    "lint": "yarn eslint --ext .js,.ts --fix . && yarn prettier --write ."
+    "start": "nodemon --experimental-specifier-resolution=node",
+    "dev": "rm -rf dist && yarn build && yarn start",
+    "lint": "yarn eslint --ext .js,.ts --fix . && yarn prettier --write .",
+    "migrate": "knex migrate:latest",
+    "seed": "knex seed:latest",
+    "migrate:make": "knex migrate:make",
+    "seed:make": "knex seed:make"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.2",
-    "@types/node": "^20.11.8",
+    "@types/express-session": "^1.17.10",
+    "@types/node": "^20.11.19",
     "@types/sqlite3": "^3.1.11",
     "@typescript-eslint/eslint-plugin": "6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
@@ -35,6 +41,7 @@
     "eslint-plugin-prettier": "^5.1.3",
     "http-terminator": "^3.2.0",
     "jest": "^29.7.0",
+    "nodemon": "^3.1.0",
     "prettier": "3.2.5",
     "typescript": "^5.3.3"
   }

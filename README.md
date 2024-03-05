@@ -2,18 +2,24 @@
 
 ## Scripts
 
-### Initial Configuration
+### - Initial Configuration
 
   Run scripts `yarn && yarn build`
 
-### Development Phase
+### - Development Phase
 
   #### Run `yarn build` when
-  - Changes or see changes in TypeScript config
+  - Changes or see changes in tsconfig.json / webpack.config.js
   - Deploy to a production enviro
 
   #### Run `yarn` when
   - Changes or see changes in Package.json
+
+  #### Run `yarn audit` and|or `yarn outdated` when
+  - Whenever you want to check dependency vulnerabilities && integrity respectively
+
+  #### Run `yarn cache clean` when 
+  - Whenever you want to clear local packages cache
 
 ## Framework & Language**
 1. **Express.js** : Flexible and performant web API framework
@@ -27,9 +33,11 @@ For development and production stages
 2. **SQLite**  : Lightweight transactional relational database
 3. **SQLite3** : Lightweight library for interactive SQLite in terminal & command prompt
 4. **cors**    : Safety middleware for Browser<>Server's Cross-Origin Resource Sharing
-5. **express-limiter** : Brute-force rate limitor for Express.js routes
+5. **express-rate-limit** : Brute-force rate limitor for Express.js routes
 6. **express-session** : Session management for Express.js
-7. **helmet** : Secure HTTP response headers against known vulnerabilities
+7. **helmet** : Secure HTTP response headers against known CSRF attacks and other known vulnerabilities
+8. **nodemon** : Automatic tool that watches, restarts and executes direct JavaScript
+9. **webpack && ts-loader** : Bundler and compiler in tandem for code-splitting and tree-shaking, faster compile times and better performance
 
 ## Other devDependencies
 For development stage

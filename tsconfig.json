@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "target": "ES2022", // Version features & syntax of the transpiled JS files
+    "module": "ES6", // Module system & syntax of the transpiled JS files
+    "moduleResolution": "Node", // Must match module used by target runtime / bundler
+    "esModuleInterop": true,
+    "allowJs": true, // Process & infer types from .js files
+    "allowSyntheticDefaultImports": true, // Enable default imports for modules w/o default export 
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+    "checkJs": true, // Enable type checking
+    "declaration": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true, // Files treated as separated modules despite symbols. False if using bundler
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noFallthroughCasesInSwitch": true,
+    "preserveConstEnums": true,
+    "removeComments": true,
+    "resolveJsonModule": true,
+    "strictNullChecks": true,
+    "sourceMap": true,
+    "baseUrl": ".",
+    "rootDir": ".", // Root for compiled .js files
+    "outDir": "dist", // Output for compiled .js files
+    "strict": true, // Strict type-checking and catch early type-related errors
+  },
+  // Following config options include/exclude files from compilation
+  "include": ["src/**/*"],
+  "exclude": ["node_modules"]
+}
