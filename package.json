@@ -18,11 +18,11 @@
     "test": "jest",
     "build": "tsc",
     "start": "nodemon --experimental-specifier-resolution=node",
-    "dev": "rm -rf dist && yarn build && yarn start",
+    "dev": "yarn build && yarn start",
     "lint": "yarn eslint --ext .js,.ts --fix . && yarn prettier --write .",
     "migrate": "knex migrate:latest",
-    "seed": "knex seed:latest",
     "migrate:make": "knex migrate:make",
+    "seed": "knex seed:latest",
     "seed:make": "knex seed:make"
   },
   "devDependencies": {
