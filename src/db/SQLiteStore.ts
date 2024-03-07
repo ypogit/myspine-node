@@ -5,6 +5,8 @@ import {
 import knex, { Knex } from 'knex'
 import knexConfig from '../../knexfile'
 
+// TODO: error, rejected promises handling
+
 export default class SQLiteStore implements Store {
   protected db: Knex
   protected windowMs!: number // Milliseconds before hit counts reset

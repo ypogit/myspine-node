@@ -36,7 +36,7 @@ For development and production stages
 5. **express-rate-limit** : Brute-force rate limitor for Express.js routes
 6. **express-session** : Session management for Express.js
 7. **helmet** : Secure HTTP response headers against known CSRF attacks and other known vulnerabilities
-8. **nodemon** : Automatic tool that watches, restarts and executes direct JavaScript
+8. **nodemon** : A daemon that automatically watches, restarts and executes the application (See nodemon.json)
 
 ## Other devDependencies
 For development stage

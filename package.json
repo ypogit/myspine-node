@@ -16,7 +16,7 @@
   },
   "scripts": {
     "test": "jest",
-    "build": "tsc",
+    "build": "rm -rf dist && tsc && for f in src/db/migrations/*.js; do mv \"$f\" \"${f%.js}.cjs\"; done",
     "start": "nodemon --experimental-specifier-resolution=node",
     "dev": "yarn build && yarn start",
     "lint": "yarn eslint --ext .js,.ts --fix . && yarn prettier --write .",
