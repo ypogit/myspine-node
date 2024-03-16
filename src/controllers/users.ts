@@ -18,7 +18,10 @@ const USERS_TABLE: string = 'users'
 export const users: Controller = {
   getUsers: async (_req, res) => {
     try {
-      const users = await db.select("*").from<User>(USERS_TABLE)
+      const users = await db
+        .select("*")
+        .from<User>(USERS_TABLE)
+
       res.json(users)
     } catch (err) {
       InternalServerError("get", "user", res)
@@ -29,7 +32,7 @@ export const users: Controller = {
     try {
       const userId: number = parseInt(req.params.id)
       const userById = await db(USERS_TABLE)
-        .where('id', userId)
+        .where('id', '=', userId)
         .first<User, Pick<User, "id">>()
 
       if (userById) {
@@ -56,7 +59,6 @@ export const users: Controller = {
 
       const userPayload: User | undefined  = await db(USERS_TABLE)
         .insert<User>({ email, password })
-
       res.status(201).json(userPayload)
     } catch (err: unknown) {
       InternalServerError("post", "user", res)
@@ -78,8 +80,8 @@ export const users: Controller = {
       }
 
       const userPayload: User  = await db(USERS_TABLE)
-        .where('id', userId)
-        .update<User>({ email, password })
+        .where('id', '=', userId)
+        .update<User>({ email, password: db.raw('?', [password]) })
 
       if (userPayload) {
         res.json(userPayload)
@@ -96,7 +98,7 @@ export const users: Controller = {
     try {
       const userId: number = parseInt(req.params.id)
       const userToDelete: User[]  = await db(USERS_TABLE)
-        .where('id', userId)
+        .where('id', '=', userId)
         .first<User, Pick<User, 'id'>>()
         .delete()
 
@@ -121,7 +123,7 @@ export const users: Controller = {
   
       const userByEmail: User | undefined = await db<User>("*")
         .from<User>(USERS_TABLE)
-        .where('email', email)
+        .where('email', '=', email)
         .first()
   
       if (!userByEmail) {
@@ -129,11 +131,11 @@ export const users: Controller = {
       } else {
         const isPasswordValid: boolean = await argon2.verify(password, userByEmail.password)
         const userId = userByEmail.id
-
         isPasswordValid ? 
           handleSignInTokens(userId, res) :
           InvalidRequestError("password", res)
-      }    
+      }
+
     } catch (err: unknown) {
       InternalServerError("get", "user account", res)
     }

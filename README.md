@@ -40,6 +40,7 @@ For development and production stages
 9. **jsonwebtoken** : JWT Token generation + verification with symmetric/asymmetric signatures
 10. **crypto** : Cryptographic functionalities including OpenSSL hash, HMAC, cipher, decipher, sign and verify
 11. **uuid** : Universally Unique Identifier, 128-bit presented as 32-char hexadecimal string
+12. **supertest** : Node.js HTTP requests-responses testing libary
 
 ## Other devDependencies
 For development stage
