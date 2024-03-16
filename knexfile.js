@@ -4,31 +4,31 @@ const env = process.env.NODE_ENV || 'development'
 const commonDBConfig = {
   client: 'sqlite3',
   useNullAsDefault: true,
-  migrations: { 
-    directory: './src/db/migrations' 
+  migrations: {
+    directory: './src/db/migrations'
   },
-  seeds: { 
-    directory: './src/db/seeds' 
+  seeds: {
+    directory: './src/db/seeds'
   }
 }
 
 const knexfile = {
   development: {
     ...commonDBConfig,
-    connection: { 
+    connection: {
       filename: './src/db/dev.sqlite3.db'
     },
   },
   production: {
     ...commonDBConfig,
-    connection: { 
-      filename: './src/db/prod.sqlite3.db' 
+    connection: {
+      filename: './src/db/prod.sqlite3.db'
     },
   },
   test: {
     ...commonDBConfig,
-    connection: { 
-      filename: './src/db/test.sqlite3.db' 
+    connection: {
+      filename: './src/db/test.sqlite3.db'
     },
   }
 }

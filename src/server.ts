@@ -1,21 +1,24 @@
 import cors from 'cors'
 import fs from 'fs'
 import https from 'https'
-import express, { 
+import express, {
   Application,
-  Request, 
-  Response 
+  Request,
+  Response,
+  Router
 } from 'express'
 import helmet from 'helmet'
 import rateLimit from 'express-rate-limit'
 import { 
-  corsOptions, 
+  corsOptions,
   helmetOptions, 
-  limiterOptions 
+  limiterOptions,
+  requireJwt 
 } from './middleware'
 
 const app: Application = express()
 const port = process.env.PORT || 8443
+export const router = Router()
 
 const credentials = {
   key: fs.readFileSync(process.env.PRIVATE_KEY_PATH 
@@ -27,7 +30,8 @@ const credentials = {
 app.use("/", (
   cors(corsOptions),
   helmet(helmetOptions),
-  rateLimit(limiterOptions)
+  rateLimit(limiterOptions),
+  requireJwt
 ))
 
 app.get("/", async (_req: Request, res: Response) => {

@@ -15,7 +15,7 @@
   #### Run `yarn` when
   - Changes or see changes in Package.json
 
-  #### Run `yarn audit` and|or `yarn outdated` when
+  #### Run `yarn audit` and|or `yarn outdated` whenREA
   - Whenever you want to check dependency vulnerabilities && integrity respectively
 
   #### Run `yarn cache clean` when 
@@ -37,6 +37,9 @@ For development and production stages
 6. **express-session** : Session management for Express.js
 7. **helmet** : Secure HTTP response headers against known CSRF attacks and other known vulnerabilities
 8. **nodemon** : A daemon that automatically watches, restarts and executes the application (See nodemon.json)
+9. **jsonwebtoken** : JWT Token generation + verification with symmetric/asymmetric signatures
+10. **crypto** : Cryptographic functionalities including OpenSSL hash, HMAC, cipher, decipher, sign and verify
+11. **uuid** : Universally Unique Identifier, 128-bit presented as 32-char hexadecimal string
 
 ## Other devDependencies
 For development stage
