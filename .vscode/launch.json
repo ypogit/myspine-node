@@ -6,16 +6,23 @@
   "configurations": [
     {
       "type": "node",
-      "request": "launch",
-      "name": "Launch Program",
+      "request": "launch", // Type of request to the debugger
+      "name": "Launch Node.js",// Name of configuration to display in VSCode debugger dropdown menu
       "skipFiles": [
         "<node_internals>/**"
       ],
-      "program": "${workspaceFolder}/dist/server.js",
+      "program": "${workspaceFolder}/dist/server.js", // Entry point of the Node.js app
+      "cwd": "${workspaceFolder}", // Current working directory for the debugger to the project root folder
       "preLaunchTask": "tsc: build - tsconfig.json",
       "outFiles": [
         "${workspaceFolder}/dist/**/*.js"
-      ]
+      ],
+      "sourceMapPathOverrides": {
+        "*/.*/src/*": "${webRoot}/*",
+        "meteor://💻app/*": "${workspaceFolder}/*",
+        "webpack:///./~/*": "${workspaceFolder}/node_modules/*",
+        "webpack://?:*/*": "${workspaceFolder}/*"
+      } // Source files mapping in the debugger to workspace corresponding files
     }
   ]
 }

@@ -12,9 +12,9 @@ export const BadRequestError = (category: string, res: any) => {
   return;
 }
 
-export const InvalidRequestError = (category: string, res: any) => {
+export const UnauthorizedRequestError = (category: string, res: any) => {
   res.status(401).json({
-    message: `Invalid ${capitalizeFirstLetter(category)}`
+    message: `Unauthorized: Invalid ${capitalizeFirstLetter(category)}`
   })
   return;
 }
@@ -38,7 +38,7 @@ export const InternalServerError = (
   res: any
 ) => {
   res.status(500).json({ 
-    message: `Failed to ${method} ${capitalizeFirstLetter(category)}` 
+    message: `Failed to ${capitalizeFirstLetter(method)} ${capitalizeFirstLetter(category)}` 
   })
   return;
 }

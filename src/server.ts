@@ -15,10 +15,15 @@ import {
   limiterOptions,
   requireJwt 
 } from './middleware'
+import routes from './routes'
 
-const app: Application = express()
+export const app: Application = express()
+
+routes.forEach(({ path, router }) => {
+  app.use(path, router)
+})
+
 const port = process.env.PORT || 8443
-export const router = Router()
 
 const credentials = {
   key: fs.readFileSync(process.env.PRIVATE_KEY_PATH 

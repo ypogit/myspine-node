@@ -30,9 +30,9 @@
 For development and production stages
 
 1. **Knex.js** : SQL Query Builder
-2. **SQLite**  : Lightweight transactional relational database
+2. **SQLite** : Lightweight transactional relational database
 3. **SQLite3** : Lightweight library for interactive SQLite in terminal & command prompt
-4. **cors**    : Safety middleware for Browser<>Server's Cross-Origin Resource Sharing
+4. **cors** : Safety middleware for Browser<>Server's Cross-Origin Resource Sharing
 5. **express-rate-limit** : Brute-force rate limitor for Express.js routes
 6. **express-session** : Session management for Express.js
 7. **helmet** : Secure HTTP response headers against known CSRF attacks and other known vulnerabilities
@@ -40,7 +40,6 @@ For development and production stages
 9. **jsonwebtoken** : JWT Token generation + verification with symmetric/asymmetric signatures
 10. **crypto** : Cryptographic functionalities including OpenSSL hash, HMAC, cipher, decipher, sign and verify
 11. **uuid** : Universally Unique Identifier, 128-bit presented as 32-char hexadecimal string
-12. **supertest** : Node.js HTTP requests-responses testing libary
 
 ## Other devDependencies
 For development stage
@@ -53,3 +52,6 @@ For development stage
 6. **eslint** : Guidelines for code convention and style
 7. **eslint-plugin-prettier** : Prettier as a linter rule
 8. **eslint-config-prettier** : Prettier without linter rule conflicts
+9. **supertest** : Node.js HTTP requests-responses testing libary
+10. **ts-jest** : Typescript processor with source map support for Jest
+11. **babel-jest** : JavaScript Transformer for Jest using Babel

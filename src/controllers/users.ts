@@ -5,12 +5,12 @@ import {
   BadRequestError,
   ExternalServerError,
   InternalServerError,
-  InvalidRequestError,
+  UnauthorizedRequestError,
   NotFoundError
 } from '../utils/funcs/errors'
 import { Controller } from '../utils/types'
-import { User } from '../models'
-import { handleSignInTokens } from 'src/middleware/tokens'
+import { User, IUser } from '../models'
+import { handleSignInTokens } from '../middleware/tokens'
 
 const db: Knex = knex(knexConfig)
 const USERS_TABLE: string = 'users'
@@ -18,11 +18,8 @@ const USERS_TABLE: string = 'users'
 export const users: Controller = {
   getUsers: async (_req, res) => {
     try {
-      const users = await db
-        .select("*")
-        .from<User>(USERS_TABLE)
-
-      res.json(users)
+      const users = await User.readAll()
+      res.status(200).json(users)
     } catch (err) {
       InternalServerError("get", "user", res)
     }
@@ -33,7 +30,7 @@ export const users: Controller = {
       const userId: number = parseInt(req.params.id)
       const userById = await db(USERS_TABLE)
         .where('id', '=', userId)
-        .first<User, Pick<User, "id">>()
+        .first<IUser, Pick<IUser, "id">>()
 
       if (userById) {
         res.json(userById)
@@ -57,8 +54,7 @@ export const users: Controller = {
         BadRequestError("password", res)
       }
 
-      const userPayload: User | undefined  = await db(USERS_TABLE)
-        .insert<User>({ email, password })
+      const userPayload: Promise<IUser>  = User.create({ email, password })
       res.status(201).json(userPayload)
     } catch (err: unknown) {
       InternalServerError("post", "user", res)
@@ -79,9 +75,9 @@ export const users: Controller = {
         BadRequestError("password", res)
       }
 
-      const userPayload: User  = await db(USERS_TABLE)
+      const userPayload: IUser  = await db(USERS_TABLE)
         .where('id', '=', userId)
-        .update<User>({ email, password: db.raw('?', [password]) })
+        .update<IUser>({ email, password: db.raw('?', [password]) })
 
       if (userPayload) {
         res.json(userPayload)
@@ -99,7 +95,7 @@ export const users: Controller = {
       const userId: number = parseInt(req.params.id)
       const userToDelete: User[]  = await db(USERS_TABLE)
         .where('id', '=', userId)
-        .first<User, Pick<User, 'id'>>()
+        .first<IUser, Pick<IUser, 'id'>>()
         .delete()
 
       if (userToDelete) {
@@ -121,8 +117,8 @@ export const users: Controller = {
         BadRequestError("email and password", res)
       }
   
-      const userByEmail: User | undefined = await db<User>("*")
-        .from<User>(USERS_TABLE)
+      const userByEmail: IUser | undefined = await db<IUser>("*")
+        .from<IUser>(USERS_TABLE)
         .where('email', '=', email)
         .first()
   
@@ -133,7 +129,7 @@ export const users: Controller = {
         const userId = userByEmail.id
         isPasswordValid ? 
           handleSignInTokens(userId, res) :
-          InvalidRequestError("password", res)
+          UnauthorizedRequestError("password", res)
       }
 
     } catch (err: unknown) {

@@ -3,36 +3,47 @@ import fs from 'fs'
 import jwt, { SignOptions } from 'jsonwebtoken'
 import knex from 'knex'
 import knexConfig from '../../knexfile'
-import { GenerateToken, JwtPayload } from "../utils/types"
-import { InternalServerError, InvalidRequestError } from '../utils/funcs/errors'
+import { GenerateTokenConfig, JwtPayload } from "../utils/types"
+import { 
+  InternalServerError, 
+  UnauthorizedRequestError 
+} from '../utils/funcs/errors'
 import { v4 } from 'uuid'
 import { UserToken } from 'src/models'
 
 const db = knex(knexConfig)
 const USER_TOKENS_TABLE: string = 'user_tokens'
-const key = fs.readFileSync(process.env.PRIVATE_KEY_PATH 
-  || './certs/local-key.pem', 'utf8')
-const privateKey = crypto.createPrivateKey({
-  key,
+
+export const privateKey = crypto.createPrivateKey({
+  key: fs.readFileSync(process.env.PRIVATE_KEY_PATH 
+    || './certs/local-key.pem', 'utf8'),
   format: 'pem'
 })
 
-export const generateToken = (config: GenerateToken) => {
+const publicKey = crypto.createPublicKey({
+  key: fs.readFileSync(process.env.PRIVATE_KEY_PATH
+  || './certs/local-key.pem', 'utf-8'),
+  format: 'pem'
+})
+
+export const generateToken = (config: GenerateTokenConfig) => {
   const { userId } = config
   const payload =  { id: v4(), userId }
   const options: SignOptions = { 
     algorithm: 'RS256', 
-    expiresIn: config.expiresIn || '1h' 
+    expiresIn: config.expiresIn || '1h'
   }
 
   return jwt.sign(payload, privateKey, options)
 }
 
-export const verifyToken = (token: string): Promise<JwtPayload> => {
-  return new Promise<JwtPayload>((resolve, reject) => {
-    jwt.verify(token, privateKey, (err, decoded) => {
+export const verifyToken = async (token: string): Promise<JwtPayload> => {
+  return await new Promise<JwtPayload>((resolve, reject) => {
+    jwt.verify(token, publicKey, (err, decoded) => {
       if (err) {
-        return reject(err);
+        err.name === 'JsonWebTokenError' && err.message === 'invalid signature' ?
+          reject(new Error('Invalid token signature')) :
+          reject(err)
       }
       resolve(decoded as JwtPayload);
     })
@@ -41,12 +52,18 @@ export const verifyToken = (token: string): Promise<JwtPayload> => {
 
 export const requireJwt = async(req: any, res: any, next: any) => {
   try {
-    const token = req.headers.authorization.split(' ')[1]
+    const authorizationHeader = req.headers.authorization
+    
+    if (!authorizationHeader) {
+      throw new Error('Authorization header is missing')
+    }
+
+    const token = authorizationHeader.split(' ')[1]
     const decoded = await verifyToken(token)
     req.user = decoded
     next()
   } catch(err) {
-    InvalidRequestError('token', res)
+    UnauthorizedRequestError('token', res)
   }
 }
 
@@ -59,7 +76,7 @@ export const handleSignInTokens = async(userId: number, res: any) => {
       .where('user_id', '=', userId)
       .first<UserToken>()
 
-    if (existingTokens && existingTokens.access_token_expires_at > new Date()) {
+    if (existingTokens && existingTokens.access_token_expires_at > new Date(Date.now())) {
       // Skip insertion if user already has valid tokens
       res.status(200).json({ accessToken, refreshToken })
       return
@@ -89,7 +106,7 @@ export const handleSignOutTokens = async(refreshToken: string, res: any) => {
       .first<UserToken>()
 
     if (!userToken) {
-      InvalidRequestError("refresh token", res)
+      UnauthorizedRequestError("refresh token", res)
     } else {
       await db(USER_TOKENS_TABLE)
         .where('user_id', userToken.user_id)

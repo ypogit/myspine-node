@@ -5,12 +5,12 @@ export type Controller = {
   ) => Promise<void>
 }
 
-export type GenerateToken = {
+export type GenerateTokenConfig = {
   userId: number
   expiresIn?: '1h' | '15m'
 }
 
 export type JwtPayload = {
-  [key: string]: any;
+  id: number;
   exp: number;
 }
