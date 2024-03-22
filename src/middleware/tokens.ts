@@ -3,13 +3,13 @@ import fs from 'fs'
 import jwt, { SignOptions } from 'jsonwebtoken'
 import knex from 'knex'
 import knexConfig from '../../knexfile'
-import { GenerateTokenConfig, JwtPayload } from "../utils/types"
 import { 
   InternalServerError, 
   UnauthorizedRequestError 
 } from '../utils/funcs/errors'
 import { v4 } from 'uuid'
 import { UserToken, IUser } from '../models'
+import { JwtPayload } from 'src/utils/types'
 
 const db = knex(knexConfig)
 const USER_TOKENS_TABLE: string = 'user_tokens'
@@ -26,12 +26,11 @@ const publicKey = crypto.createPublicKey({
   format: 'pem'
 })
 
-export const generateToken = (config: GenerateTokenConfig) => {
-  const { userId } = config
+export const generateToken = (userId: number, expiresIn?: string | number) => {
   const payload =  { id: v4(), userId }
   const options: SignOptions = { 
     algorithm: 'RS256', 
-    expiresIn: config.expiresIn || '1h'
+    expiresIn: expiresIn || '1h'
   }
 
   return jwt.sign(payload, privateKey, options)
@@ -60,6 +59,7 @@ export const requireJwt = async(req: any, res: any, next: any) => {
 
     const token = authorizationHeader.split(' ')[1]
     const decoded = await verifyToken(token)
+
     req.user = decoded
     next()
   } catch(err) {
@@ -67,11 +67,14 @@ export const requireJwt = async(req: any, res: any, next: any) => {
   }
 }
 
-export const handleSignInTokens = async(userByEmail: IUser, res: any) => {
+export const handleSignInTokens = async(userByEmail: IUser, res: any, expiresIn?: string | number) => {
   const userId = userByEmail.id
-  const accessToken = generateToken({ userId, expiresIn: '15m' })
-  const refreshToken = generateToken({ userId }) // Stay logged-in
-
+  const accessToken = generateToken(
+    userId, 
+    expiresIn || '15m'
+  ) 
+  const refreshToken = generateToken(userId) // Stay logged-in
+  
   try {
     const existingTokens = await db(USER_TOKENS_TABLE)
       .where('user_id', '=', userId)
@@ -100,15 +103,14 @@ export const handleSignInTokens = async(userByEmail: IUser, res: any) => {
   }
 }
 
-export const handleSignOutTokens = async(refreshToken: string, res: any) => {
+export const handleSignOutTokens = async(userId: number, res: any) => {
   try {
-    const decoded = await verifyToken(refreshToken)
-    const userToken = await UserToken.readByToken(decoded)
+    const userToken = await UserToken.readByUserId(userId)
 
     if (!userToken) {
       UnauthorizedRequestError("refresh token", res)
     } else {
-      await UserToken.delete(userToken.user_id)
+      await UserToken.delete(userId)
       res.status(204).end()
     }
   } catch (err) {

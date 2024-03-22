@@ -8,7 +8,10 @@ import {
 } from '../utils/funcs/errors'
 import { Controller } from '../utils/types'
 import { User, IUser } from '../models'
-import { handleSignInTokens } from '../middleware/tokens'
+import { 
+  handleSignInTokens, 
+  handleSignOutTokens 
+} from '../middleware/tokens'
 
 export const users: Controller = {
   getUsers: async (_req, res) => {
@@ -59,6 +62,7 @@ export const users: Controller = {
 
       if (email && hashedPass) {
         const user = await User.create({ email, password: hashedPass });
+
         res.status(201).json(user);
       }
     } catch (err: Error | unknown) {
@@ -92,6 +96,7 @@ export const users: Controller = {
       if (email || hashedPass) {
         const payload = { email, password: hashedPass }
         const updatedUser = await User.update(userId, payload);
+
         res.status(201).json(updatedUser)
       }
     } catch (err: Error | unknown) {
@@ -136,9 +141,10 @@ export const users: Controller = {
       if (!userByEmail) {
         NotFoundError("user", res)
       } else {
-        const hashedPass = await argon2.hash(password)  
+        const hashedPass = await argon2.hash(password)
+
         hashedPass
-          ? handleSignInTokens(userByEmail, res)
+          ? handleSignInTokens(userByEmail, res, req.body?.expiresIn)
           : UnauthorizedRequestError("password", res)
       }
     } catch (err: unknown) {
@@ -147,9 +153,12 @@ export const users: Controller = {
   },
 
   signOut: async (req, res) => {
-    const { refreshToken } = req.body
-
-    await handleSignInTokens(refreshToken, res)
-    res.redirect('/signIn')
+    try {
+      const userId = req.params.id
+      await handleSignOutTokens(userId, res)
+      res.redirect('/signIn')
+    } catch (err: Error | unknown) {
+      InternalServerError("sign-out", "user", res)
+    }
   }
 }

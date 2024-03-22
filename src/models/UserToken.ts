@@ -1,7 +1,6 @@
 import knex from "knex"
 import knexConfig from '../../knexfile'
 import { JwtPayload } from "src/utils/types"
-import { IUser } from "./User"
 
 export interface IUserToken {
   id: number,
@@ -50,7 +49,7 @@ export class UserToken {
   static async readByUserId(userId: number): Promise<IUserToken> {
     return await db(USER_TOKENS_TABLE)
       .where('user_id', '=', userId)
-      .first<IUserToken, Pick<IUserToken, "id">>()
+      .first<IUserToken, Pick<IUserToken, "user_id">>()
   }
 
   static async delete(userId: number) {

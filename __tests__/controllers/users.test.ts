@@ -10,7 +10,7 @@ describe("users controller", () => {
   let db: Knex;
   let mockUserId: number = 696
   let users: IUser[] = [];
-  let token: string = generateToken({ userId: mockUserId })
+  let token: string = generateToken(mockUserId)
   let userRoute = '/users'
 
   beforeEach(async() => {
@@ -172,7 +172,7 @@ describe("users controller", () => {
 
       const res = await request(app)
         .put(`${userRoute}/${userId}/update`)        
-        .set('Authorization', `Bearer ${generateToken({ userId })}`)
+        .set('Authorization', `Bearer ${generateToken(userId)}`)
         .set('Content-Type', 'application/json')
         .accept('application/json')
         .send(payload)
@@ -218,7 +218,7 @@ describe("users controller", () => {
       const res = await request(app)
         .delete(`/users/${userId}/delete`)
         .set("Content-Type", "application/json")
-        .set("Authorization", `Bearer ${generateToken({ userId })}`)
+        .set("Authorization", `Bearer ${generateToken(userId)}`)
   
       expect(res.status).toEqual(204)
       expect(res.body).toEqual({});
@@ -232,7 +232,7 @@ describe("users controller", () => {
         const res = await request(app)
           .delete(`/users/${mockUserId}/delete`)
           .set("Content-Type", "application/json")
-          .set("Authorization", `Bearer ${generateToken({ userId: 1 })}`)
+          .set("Authorization", `Bearer ${token}`)
       } catch (err: any) {
         expect(err.status).toBe(404);
         expect(err.message).toEqual(`User [${mockUserId}] not found`);
@@ -244,8 +244,8 @@ describe("users controller", () => {
 
       try {
         await request(app)
-          .get(`${userRoute}/${users[0].id}/delee`)
-          .set('Authorization', `Bearer ${generateToken({ userId: mockUserId })}`)
+          .get(`${userRoute}/${users[0].id}/delete`)
+          .set('Authorization', `Bearer ${token}`)
           .set('Content-Type', 'application/json')
           .accept('application/json');
       } catch (err: any) {
@@ -260,7 +260,7 @@ describe("users controller", () => {
       const user = users[1]
       const { id, email, password } = user
       const payload = { email, password }
-      const token = generateToken({ userId: id })
+      const token = generateToken(id)
 
       const res = await request(app)
         .post(`${userRoute}/signIn`)
@@ -290,9 +290,46 @@ describe("users controller", () => {
       .set('Authorization', `Bearer ${token}`)
       .set('Content-Type', 'application/json')
       .accept('application/json')
+      .expect(400)
 
       expect(res.status).toBe(400)
       expect(res.body.message).toEqual("Email & Password Required")
+    })
+  })
+
+  describe("signOut", () => {
+    it("should sign-out and delete User token if exists", async() => {
+      const user = users[2]
+      const userId = user.id
+      const { email, password } = user
+      const oneDay = '1d'
+      const payload = { email, password, expiresIn: oneDay }
+      const token = generateToken(userId, oneDay)
+
+      // Sign-in to generate access / refresh tokens 
+      await request(app)
+        .post(`${userRoute}/signIn`)
+        .send(payload)
+        .set('Authorization', `Bearer ${token}`)
+        .set('Content-Type', 'application/json')
+        .accept('application/json')
+        .expect(201)
+
+      const signInToken = await UserToken.readByUserId(userId)
+
+      expect(signInToken).toBeDefined()
+      expect(signInToken.user_id).toEqual(userId)
+      expect(signInToken.access_token).toBeDefined()
+
+      const signOutRes = await request(app)
+        .post(`${userRoute}/${userId}/signOut`)
+        .set('Content-Type', 'application/json')
+        .expect(204)
+
+      const signOutToken = await UserToken.readByUserId(userId)
+      
+      expect(signOutRes.body).toEqual({})
+      expect(signOutToken).toBeUndefined()
     })
   })
 })
