@@ -1,44 +1,43 @@
 import { capitalizeFirstLetter } from './strings'
 
-/** 
- * These error handling functions implement an empty "return" 
- * to exit the async-await promise functions
- */
+interface CreateErrorOptions {
+  res: any
+  statusCode: number
+  message: string
+}
+
+const createError = ({ res, statusCode, message }: CreateErrorOptions) => {
+  if (!res.headersSent) {
+    res.status(statusCode).json({ message })
+    throw new Error(message)
+  }
+}
 
 export const BadRequestError = (category: string, res: any) => {
-  res.status(400).json({ 
-    message: `${capitalizeFirstLetter(category)} Required` 
-  })
-  return;
+ const message = `${capitalizeFirstLetter(category)} Required`
+  createError({ res, statusCode: 400, message })
 }
 
 export const UnauthorizedRequestError = (category: string, res: any) => {
-  res.status(401).json({
-    message: `Unauthorized: Invalid ${capitalizeFirstLetter(category)}`
-  })
-  return;
+  const message = `Unauthorized: Invalid ${capitalizeFirstLetter(category)}`
+  createError({ res, statusCode: 401, message })
 }
 
 export const NotFoundError = (category: string, res: any) => {
-  res.status(404).json({ 
-    message: `${capitalizeFirstLetter(category)} Not Found` 
-  })
+  const message = `${capitalizeFirstLetter(category)} Not Found`
+  createError({ res, statusCode: 404, message })
 }
 
 export const ExternalServerError = (category: string, res: any) => {
-  res.status(500).json({ 
-    message: `Something went wrong with ${capitalizeFirstLetter(category)}` 
-  })
-  return;
+  const message = `Server Error: Something went wrong with ${capitalizeFirstLetter(category)}`
+  createError({ res, statusCode: 500, message })
 }
 
 export const InternalServerError = (
-  method: "get" | "post" | "put" | "delete" | "destroy" | "sign-in" | "sign-out", 
+  method: "get" | "create" | "update" | "delete" | "destroy" | "sign-in" | "sign-out",
   category: string, 
-  res: any
+  res: any,
 ) => {
-  res.status(500).json({ 
-    message: `Failed to ${capitalizeFirstLetter(method)} ${capitalizeFirstLetter(category)}` 
-  })
-  return;
+  const message = `Internal Server Error : Unable to ${capitalizeFirstLetter(method)} ${capitalizeFirstLetter(category)}`
+  createError({ res, statusCode: 500, message })
 }

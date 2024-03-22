@@ -9,7 +9,7 @@ import {
   UnauthorizedRequestError 
 } from '../utils/funcs/errors'
 import { v4 } from 'uuid'
-import { UserToken } from 'src/models'
+import { UserToken, IUser } from '../models'
 
 const db = knex(knexConfig)
 const USER_TOKENS_TABLE: string = 'user_tokens'
@@ -67,7 +67,8 @@ export const requireJwt = async(req: any, res: any, next: any) => {
   }
 }
 
-export const handleSignInTokens = async(userId: number, res: any) => {
+export const handleSignInTokens = async(userByEmail: IUser, res: any) => {
+  const userId = userByEmail.id
   const accessToken = generateToken({ userId, expiresIn: '15m' })
   const refreshToken = generateToken({ userId }) // Stay logged-in
 
@@ -82,17 +83,18 @@ export const handleSignInTokens = async(userId: number, res: any) => {
       return
     }
 
-    await db(USER_TOKENS_TABLE)
-      .insert<UserToken>({
-        user_id: userId,
-        access_token: accessToken,
-        refresh_token: refreshToken,
-        access_token_expires_at: new Date(Date.now() + (
-          Number(process.env.ACCESS_TOKEN_EXPIRES_AT) || 15 * 60 * 1000
-        ))
-      })
+    const tokens = await UserToken.create({
+      user_id: userId,
+      access_token: accessToken,
+      refresh_token: refreshToken
+    })
 
-    res.status(200).json({ accessToken, refreshToken })
+    if (tokens) {
+      res.status(201).json({ 
+        email: userByEmail.email,
+        ...tokens
+      })
+    }
   } catch (err) {
     InternalServerError("sign-in", "user", res)
   }
@@ -101,17 +103,12 @@ export const handleSignInTokens = async(userId: number, res: any) => {
 export const handleSignOutTokens = async(refreshToken: string, res: any) => {
   try {
     const decoded = await verifyToken(refreshToken)
-    const userToken: UserToken = await db(USER_TOKENS_TABLE)
-      .where('refresh_token', '=', decoded)
-      .first<UserToken>()
+    const userToken = await UserToken.readByToken(decoded)
 
     if (!userToken) {
       UnauthorizedRequestError("refresh token", res)
     } else {
-      await db(USER_TOKENS_TABLE)
-        .where('user_id', userToken.user_id)
-        .del<UserToken>()
-
+      await UserToken.delete(userToken.user_id)
       res.status(204).end()
     }
   } catch (err) {

@@ -1,6 +1,4 @@
 import argon2 from 'argon2'
-import knex, { Knex } from 'knex'
-import knexConfig from '../../knexfile'
 import { 
   BadRequestError,
   ExternalServerError,
@@ -12,28 +10,23 @@ import { Controller } from '../utils/types'
 import { User, IUser } from '../models'
 import { handleSignInTokens } from '../middleware/tokens'
 
-const db: Knex = knex(knexConfig)
-const USERS_TABLE: string = 'users'
-
 export const users: Controller = {
   getUsers: async (_req, res) => {
     try {
       const users = await User.readAll()
       res.status(200).json(users)
     } catch (err) {
-      InternalServerError("get", "user", res)
+      InternalServerError("get", "users", res)
     }
   },
 
   getUserById: async (req, res) => {
     try {
       const userId: number = parseInt(req.params.id)
-      const userById = await db(USERS_TABLE)
-        .where('id', '=', userId)
-        .first<IUser, Pick<IUser, "id">>()
+      const userById: IUser = await User.readById(userId)
 
       if (userById) {
-        res.json(userById)
+        res.status(200).json(userById)
       } else {
         NotFoundError("user", res)
       }
@@ -45,61 +38,74 @@ export const users: Controller = {
 
   postUser: async (req, res) => {
     try {
-      const { email, password } = req.body
-      
-      if (password) {
-        const hashedPass: string = await argon2.hash(password)
-        req.body.password = hashedPass
-      } else {
-        BadRequestError("password", res)
+      let email: string | undefined = req.body?.email
+      let password: string | undefined = req.body?.password
+
+      if (!email) {
+        BadRequestError("email", res)
       }
 
-      const userPayload: Promise<IUser>  = User.create({ email, password })
-      res.status(201).json(userPayload)
-    } catch (err: unknown) {
-      InternalServerError("post", "user", res)
+      if (!password) {
+        BadRequestError("password", res);
+      }
+      
+      const hashedPass: string | undefined = password
+        ? await argon2.hash(password)
+        : undefined;
+  
+      if (!hashedPass) {
+        ExternalServerError("argon 2 hashing", res);
+      }
+
+      if (email && hashedPass) {
+        const user = await User.create({ email, password: hashedPass });
+        res.status(201).json(user);
+      }
+    } catch (err: Error | unknown) {
+      InternalServerError("create", "user", res)
     }
   },
 
   putUser: async (req, res) => {
     try {
       const userId: number = parseInt(req.params.id)
-      const { email, password } = req.body
+      const userById: IUser = await User.readById(userId)
+
+      let email: string | undefined = req.body?.email
+      let password: string | undefined = req.body?.password
+
+      if (!userById) {
+        NotFoundError("user", res)
+      }
       
+      let hashedPass: string | undefined
       if (password) {
-        const hashedPass = await argon2.hash(password)
-        hashedPass ? 
-          ExternalServerError("argon2 hashing", res) : 
-          req.body.password = hashedPass
-      } else {
-        BadRequestError("password", res)
-      }
-
-      const userPayload: IUser  = await db(USERS_TABLE)
-        .where('id', '=', userId)
-        .update<IUser>({ email, password: db.raw('?', [password]) })
-
-      if (userPayload) {
-        res.json(userPayload)
-      } else {
-        NotFoundError(`User ID: ${userId}`, res)
+        hashedPass = password
+          ? await argon2.hash(password)
+          : undefined;
       }
       
-    } catch (err: unknown) {
-      InternalServerError("put", "user", res)
+      if (!hashedPass) {
+        ExternalServerError("argon 2 hashing", res);
+      }
+
+      if (email || hashedPass) {
+        const payload = { email, password: hashedPass }
+        const updatedUser = await User.update(userId, payload);
+        res.status(201).json(updatedUser)
+      }
+    } catch (err: Error | unknown) {
+      InternalServerError("update", "user", res)
     }
   },
 
   deleteUser: async (req, res) => {
     try {
       const userId: number = parseInt(req.params.id)
-      const userToDelete: User[]  = await db(USERS_TABLE)
-        .where('id', '=', userId)
-        .first<IUser, Pick<IUser, 'id'>>()
-        .delete()
+      const userDeleted: number  = await User.delete(userId)
 
-      if (userToDelete) {
-        res.json(userToDelete)
+      if (userDeleted) {
+        res.status(204).json(userDeleted)
       } else {
         NotFoundError(`User ID: ${userId}`, res)
       }
@@ -112,28 +118,31 @@ export const users: Controller = {
   signIn: async (req, res) => {
     try {
       const { email, password } = req.body
-  
-      if (!email || !password) {
-        BadRequestError("email and password", res)
+
+      if (!email && !password) {
+        BadRequestError("email & password", res)
       }
-  
-      const userByEmail: IUser | undefined = await db<IUser>("*")
-        .from<IUser>(USERS_TABLE)
-        .where('email', '=', email)
-        .first()
-  
+
+      if (!email) {
+        BadRequestError("email", res)
+      }
+
+      if (!password) {
+        BadRequestError("password", res)
+      }
+
+      const userByEmail = await User.readByEmail(email)
+      
       if (!userByEmail) {
         NotFoundError("user", res)
       } else {
-        const isPasswordValid: boolean = await argon2.verify(password, userByEmail.password)
-        const userId = userByEmail.id
-        isPasswordValid ? 
-          handleSignInTokens(userId, res) :
-          UnauthorizedRequestError("password", res)
+        const hashedPass = await argon2.hash(password)  
+        hashedPass
+          ? handleSignInTokens(userByEmail, res)
+          : UnauthorizedRequestError("password", res)
       }
-
     } catch (err: unknown) {
-      InternalServerError("get", "user account", res)
+      InternalServerError("sign-in", "user account", res)
     }
   },
 
