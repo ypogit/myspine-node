@@ -4,16 +4,17 @@ import https from 'https'
 import express, {
   Application,
   Request,
-  Response,
-  Router
+  Response
 } from 'express'
 import helmet from 'helmet'
 import rateLimit from 'express-rate-limit'
+import session from 'express-session'
 import { 
   corsOptions,
   helmetOptions, 
   limiterOptions,
-  requireJwt 
+  requireJwt,
+  sessionOptions
 } from './middleware'
 import routes from './routes'
 
@@ -34,10 +35,11 @@ const credentials = {
 }
 
 app.use("/", (
-  cors(corsOptions),
-  helmet(helmetOptions),
   rateLimit(limiterOptions),
-  requireJwt
+  requireJwt,
+  session(sessionOptions),
+  cors(corsOptions),
+  helmet(helmetOptions)
 ))
 
 app.get("/", async (_req: Request, res: Response) => {
