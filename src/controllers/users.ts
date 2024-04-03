@@ -3,15 +3,10 @@ import {
   BadRequestError,
   ExternalServerError,
   InternalServerError,
-  UnauthorizedRequestError,
   NotFoundError
 } from '../utils/funcs/errors'
-import { Controller } from '../utils/types'
+import { Controller } from '../utils/types/generic'
 import { User, IUser } from '../models'
-import { 
-  handleSignInTokens, 
-  handleSignOutTokens 
-} from '../middleware/tokens'
 
 export const users: Controller = {
   getUsers: async (_req, res) => {
@@ -44,12 +39,20 @@ export const users: Controller = {
       let email: string | undefined = req.body?.email
       let password: string | undefined = req.body?.password
 
+      const existingUser = email && await User.readByEmail(email)
+
+      if (existingUser) {
+        res.redirect('/login')
+      }
+
       if (!email) {
         BadRequestError("email", res)
+        // TODO: Forgot email?
       }
 
       if (!password) {
         BadRequestError("password", res);
+        // TODO: Forgot password?
       }
       
       const hashedPass: string | undefined = password
@@ -117,48 +120,6 @@ export const users: Controller = {
 
     } catch (err: unknown) {
       InternalServerError("delete", "user", res)
-    }
-  },
-
-  signIn: async (req, res) => {
-    try {
-      const { email, password } = req.body
-
-      if (!email && !password) {
-        BadRequestError("email & password", res)
-      }
-
-      if (!email) {
-        BadRequestError("email", res)
-      }
-
-      if (!password) {
-        BadRequestError("password", res)
-      }
-
-      const userByEmail = await User.readByEmail(email)
-      
-      if (!userByEmail) {
-        NotFoundError("user", res)
-      } else {
-        const hashedPass = await argon2.hash(password)
-
-        hashedPass
-          ? handleSignInTokens(userByEmail, res, req.body?.expiresIn)
-          : UnauthorizedRequestError("password", res)
-      }
-    } catch (err: unknown) {
-      InternalServerError("sign-in", "user account", res)
-    }
-  },
-
-  signOut: async (req, res) => {
-    try {
-      const userId = req.params.id
-      await handleSignOutTokens(userId, res)
-      res.redirect('/signIn')
-    } catch (err: Error | unknown) {
-      InternalServerError("sign-out", "user", res)
     }
   }
 }

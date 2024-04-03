@@ -34,7 +34,7 @@ export const ExternalServerError = (category: string, res: any) => {
 }
 
 export const InternalServerError = (
-  method: "get" | "create" | "update" | "delete" | "destroy" | "sign-in" | "sign-out",
+  method: "get" | "create" | "update" | "delete" | "destroy" | "login" | "logout",
   category: string, 
   res: any,
 ) => {

@@ -1,6 +1,6 @@
 import knex from "knex"
 import knexConfig from '../../knexfile'
-import { JwtPayload } from "src/utils/types"
+import { JwtPayload } from "src/utils/types/generic"
 
 export interface IUserToken {
   id: number,

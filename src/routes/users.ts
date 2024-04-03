@@ -8,7 +8,5 @@ router.get('/:id', users.getUserById)
 router.post('/create', users.postUser)
 router.put('/:id/update', users.putUser)
 router.delete('/:id/delete', users.deleteUser)
-router.post('/signIn', users.signIn)
-router.post('/:id/signOut', users.signOut)
 
 export { router as usersRouter }

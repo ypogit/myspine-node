@@ -9,7 +9,7 @@ import {
 } from '../utils/funcs/errors'
 import { v4 } from 'uuid'
 import { UserToken, IUser } from '../models'
-import { JwtPayload } from 'src/utils/types'
+import { JwtPayload } from 'src/utils/types/generic'
 
 const db = knex(knexConfig)
 const USER_TOKENS_TABLE: string = 'user_tokens'
@@ -67,8 +67,9 @@ export const requireJwt = async(req: any, res: any, next: any) => {
   }
 }
 
-export const handleSignInTokens = async(userByEmail: IUser, res: any, expiresIn?: string | number) => {
+export const handleLoginTokens = async(userByEmail: IUser, req: any, res: any) => {
   const userId = userByEmail.id
+  const expiresIn = res.body?.expiresIn
   const accessToken = generateToken(
     userId, 
     expiresIn || '15m'
@@ -99,11 +100,12 @@ export const handleSignInTokens = async(userByEmail: IUser, res: any, expiresIn?
       })
     }
   } catch (err) {
-    InternalServerError("sign-in", "user", res)
+    console.log(err)
+    InternalServerError("login", "user", res)
   }
 }
 
-export const handleSignOutTokens = async(userId: number, res: any) => {
+export const handleLogoutTokens = async(userId: number, res: any) => {
   try {
     const userToken = await UserToken.readByUserId(userId)
 
@@ -114,6 +116,6 @@ export const handleSignOutTokens = async(userId: number, res: any) => {
       res.status(204).end()
     }
   } catch (err) {
-    InternalServerError("sign-out", "user", res)
+    InternalServerError("logout", "user", res)
   }
 }
