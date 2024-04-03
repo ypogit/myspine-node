@@ -27,13 +27,13 @@ type SessionOptions = {
 }
 
 export const sessionData = async(req: any, _res: any, next: NextFunction) => {
-  console.log('here')
   const sessionData = req.session as SessionData
-  console.log(sessionData)
+  
   if (sessionData && sessionData.userId) {
     sessionData.loggedIn = true;
     sessionData.userId = sessionData.userId;
   }
+  
   next();
 }
 

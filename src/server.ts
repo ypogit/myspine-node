@@ -21,6 +21,7 @@ import {
 import routes from './routes'
 
 export const app: Application = express()
+
 const port = process.env.PORT || 8443
 const credentials = {
   key: fs.readFileSync(process.env.PRIVATE_KEY_PATH 
@@ -38,16 +39,16 @@ app.use("/", (
   rateLimit(limiterOptions),
   requireJwt,
   session(sessionOptions),
-  sessionData,
+  // sessionData,
   cors(corsOptions),
   helmet(helmetOptions)
 ))
 
-app.get("/", async (req: any, res: Response) => {
-  (req.session as SessionData).userId
-    ? res.redirect('/protected')
-    : res.redirect('/login')
-})
+// app.get("/", async (req: any, res: Response) => {
+//   (req.session as SessionData).userId
+//     ? res.redirect('/protected')
+//     : res.redirect('/login')
+// })
 
 export const server = https.createServer(credentials, app);
 
