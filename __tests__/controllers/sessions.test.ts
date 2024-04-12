@@ -8,46 +8,50 @@ import { generateToken } from '../../src/middleware'
 describe("sessions controller", () => {
   let db: Knex;
   let mockUserId: number = 696
-  let users: IUser[] = [];
   let token: string = generateToken(mockUserId)
 
-  const loginRoute = '/login'
-  const logoutRoute = '/logout'
-
-  beforeEach(async() => {
+  const truncateDb = async() => {
     db = knex(knexConfig)
-
+  
     if (db) {
       await db('users').truncate()
     }
+  }
 
-    await User.create({
-      email: 'wwhite@msn.com',
-      password: 'ricin'
+  const terminateServer = async() => {
+    await new Promise<void>((resolve) => {
+      server.close(() => {
+        resolve()
+      })
     })
-
-    await User.create({
-      email: 'pinkman.abq@yahoo.com',
-      password: 'margolis'
-    })
-
-    await User.create({
-      email: 'gus@pollohermanos.cl',
-      password: 'laundromat'
-    })
-
-    users = await User.readAll()
-  })
-
-  afterAll(() => {
-    server.close()
-    db('users').truncate()
-  })
+  }
 
   describe("login", () => {
+    const loginRoute = '/login'
+  
+    beforeEach(async() => {
+      await truncateDb()
+      await terminateServer()
+    })
+
     it("should login and return tokens", async() => {
-      const user = users[1]
-      const { id, email, password } = user
+      await User.create({
+        email: 'wwhite@msn.com',
+        password: 'ricin'
+      })
+  
+      await User.create({
+        email: 'pinkman.abq@yahoo.com',
+        password: 'margolis'
+      })
+  
+      await User.create({
+        email: 'gus@pollohermanos.cl',
+        password: 'laundromat'
+      })
+  
+      const users = await User.readAll()
+      const { id, email, password } = users[1]
       const payload = { email, password }
       const token = generateToken(id)
     
@@ -58,7 +62,7 @@ describe("sessions controller", () => {
         .set('Content-Type', 'application/json')
         .accept('application/json')
         .expect(201)
-
+      
       const userById = await User.readById(id)
       const userTokenById = await UserToken.readByUserId(id)
 
@@ -73,52 +77,78 @@ describe("sessions controller", () => {
     });
   
     it("should return a 400 Bad Request if missing email/password", async () => {
-    const res = await request(app)
-      .post(loginRoute)
-      .send({})
-      .set('Authorization', `Bearer ${token}`)
-      .set('Content-Type', 'application/json')
-      .accept('application/json')
-      .expect(400)
-
-      expect(res.status).toBe(400)
-      expect(res.body.message).toEqual("Email & Password Required")
-    })
-  })
-
-  describe("logout", () => {
-    it("should logout and delete User token if exists", async() => {
-      const user = users[2]
-      const userId = user.id
-      const payload = { email: user.email, password: user.password }
-      const oneDay = '1d'
-      const token = generateToken(userId, oneDay)
-
-      // Login to generate access / refresh tokens 
-      await request(app)
+      const res = await request(app)
         .post(loginRoute)
-        .send(payload)
+        .send({})
         .set('Authorization', `Bearer ${token}`)
         .set('Content-Type', 'application/json')
         .accept('application/json')
-        .expect(201)
+        .expect(400)
 
-      const signInToken = await UserToken.readByUserId(userId)
+        expect(res.status).toBe(400)
+        expect(res.body.message).toEqual("Email & Password Required")
+      })
+  })
 
-      expect(signInToken).toBeDefined()
-      expect(signInToken.user_id).toEqual(userId)
-      expect(signInToken.access_token).toBeDefined()
+  describe("logout", () => {  
+    const loginRoute = '/login'
+    const logoutRoute = '/logout'
+  
+    beforeEach(async() => {
+      await truncateDb()
+      await terminateServer()
+    })
 
-      const signOutRes = await request(app)
-        .post(`${logoutRoute}`)
-        .send({ id: userId })
-        .set('Content-Type', 'application/json')
-        .expect(204)
+    it("should logout and delete User token if exists", async() => {
+      await User.create({
+        email: 'wwhite@msn.com',
+        password: 'ricin'
+      })
+  
+      await User.create({
+        email: 'pinkman.abq@yahoo.com',
+        password: 'margolis'
+      })
+  
+      await User.create({
+        email: 'gus@pollohermanos.cl',
+        password: 'laundromat'
+      })
 
-      const signOutToken = await UserToken.readByUserId(userId)
-      
-      expect(signOutRes.body).toEqual({})
-      expect(signOutToken).toBeUndefined()
+      const user = await User.readByEmail('gus@pollohermanos.cl')
+      const userId = user?.id
+      const payload = { email: user?.email, password: user?.password }
+      const oneDay = '1d'
+
+      if (userId) {
+        const token = generateToken(userId, oneDay)
+  
+        // Login to generate access / refresh tokens 
+        await request(app)
+          .post(loginRoute)
+          .send(payload)
+          .set('Authorization', `Bearer ${token}`)
+          .set('Content-Type', 'application/json')
+          .accept('application/json')
+          .expect(201)
+  
+        const signInToken = await UserToken.readByUserId(userId)
+  
+        expect(signInToken).toBeDefined()
+        expect(signInToken.user_id).toEqual(userId)
+        expect(signInToken.access_token).toBeDefined()
+  
+        const signOutRes = await request(app)
+          .post(`${logoutRoute}`)
+          .send({ id: userId })
+          .set('Content-Type', 'application/json')
+          .expect(204)
+  
+        const signOutToken = await UserToken.readByUserId(userId)
+        
+        expect(signOutRes.body).toEqual({})
+        expect(signOutToken).toBeUndefined()
+      }
     })
   })
 })

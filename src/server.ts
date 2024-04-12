@@ -15,7 +15,7 @@ import {
   helmetOptions, 
   limiterOptions,
   sessionOptions,
-  sessionData,
+  setSessionData,
   requireJwt
 } from './middleware'
 import routes from './routes'
@@ -39,7 +39,7 @@ app.use("/", (
   rateLimit(limiterOptions),
   requireJwt,
   session(sessionOptions),
-  // sessionData,
+  setSessionData,
   cors(corsOptions),
   helmet(helmetOptions)
 ))

@@ -26,14 +26,14 @@ type SessionOptions = {
   store: any
 }
 
-export const sessionData = async(req: any, _res: any, next: NextFunction) => {
+export const setSessionData = async(req: any, _res: any, next: NextFunction) => {
   const sessionData = req.session as SessionData
   
   if (sessionData && sessionData.userId) {
     sessionData.loggedIn = true;
     sessionData.userId = sessionData.userId;
   }
-  
+
   next();
 }
 

@@ -6,6 +6,7 @@ export default {
   },
   moduleFileExtensions: ["ts", "js", "json", "node"],
   preset: 'ts-jest',
+  verbose: true,
   testEnvironment: 'node',
   testMatch: ["<rootDir>/**/*.{test,spec}.{js,ts}"],
   transform: {

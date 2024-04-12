@@ -1,5 +1,5 @@
 import { app, server } from '../../src/server'
-import { User, IUser } from '../../src/models'
+import { User } from '../../src/models'
 import knex, { Knex } from 'knex'
 import knexConfig from '../../knexfile'
 import request from 'supertest'
@@ -9,42 +9,49 @@ import argon2 from 'argon2'
 describe("users controller", () => {
   let db: Knex;
   let mockUserId: number = 696
-  let users: IUser[] = [];
   let token: string = generateToken(mockUserId)
   let userRoute = '/users'
 
-  beforeEach(async() => {
+  const truncateDb = async() => {
     db = knex(knexConfig)
-
+  
     if (db) {
       await db('users').truncate()
     }
-
-    await User.create({
-      email: 'wwhite@msn.com', 
-      password: 'ricin'
+  }
+  
+  const terminateServer = async() => {
+    await new Promise<void>((resolve) => {
+      server.close(() => {
+        resolve()
+      })
     })
-
-    await User.create({
-      email: 'pinkman.abq@yahoo.com', 
-      password: 'margolis'
-    })
-
-    await User.create({
-      email: 'gus@pollohermanos.cl',
-      password: 'laundromat'
-    })
-
-    users = await User.readAll()
-  })
-
-  afterAll(() => {
-    server.close()
-    db('users').truncate()
-  })
+  }
 
   describe("getUsers", () => {
+    beforeEach(async() => {
+      await truncateDb()
+      await terminateServer()
+    })
+
     it("should GET all users", async() => {
+      await User.create({
+        email: 'wwhite@msn.com', 
+        password: 'ricin'
+      })
+  
+      await User.create({
+        email: 'pinkman.abq@yahoo.com', 
+        password: 'margolis'
+      })
+  
+      await User.create({
+        email: 'gus@pollohermanos.cl',
+        password: 'laundromat'
+      })
+  
+      const users = await User.readAll()
+
       const res = await request(app)
         .get(userRoute)
         .set('Authorization', `Bearer ${token}`)
@@ -72,7 +79,28 @@ describe("users controller", () => {
   })
 
   describe("getUserById", () => {
+    beforeEach(async() => {
+      await truncateDb()
+      await terminateServer()
+    })
+
     it("should GET a user by id", async () => {
+      await User.create({
+        email: 'wwhite@msn.com', 
+        password: 'ricin'
+      })
+  
+      await User.create({
+        email: 'pinkman.abq@yahoo.com', 
+        password: 'margolis'
+      })
+  
+      await User.create({
+        email: 'gus@pollohermanos.cl',
+        password: 'laundromat'
+      })
+      
+      const users = await User.readAll()
       const userId = users[0].id
       const user = await User.readById(userId)
       const res = await request(app)
@@ -99,11 +127,19 @@ describe("users controller", () => {
     })
   
     it("should invoke InternalServerError on db query failure", async () => {
+      await User.create({
+        email: 'wwhite@msn.com', 
+        password: 'ricin'
+      })
+
+      const users = await User.readAll()
+      const userId = users[0].id
+
       jest.spyOn(db, 'first').mockRejectedValue(new Error('oops'));
   
       try {
         await request(app)
-          .get(`${userRoute}/${users[0].id}`)
+          .get(`${userRoute}/${userId}`)
           .set('Authorization', `Bearer ${token}`)
           .set('Content-Type', 'application/json')
           .accept('application/json');
@@ -115,6 +151,11 @@ describe("users controller", () => {
   })
 
   describe("postUser", () => {
+    beforeEach(async() => {
+      await truncateDb()
+      await terminateServer()
+    })
+
     it("should POST a user", async () => {
       const payload = {
         email: 'mike@mafia.org',
@@ -136,9 +177,7 @@ describe("users controller", () => {
       expect(argon2.verify(hash, payload.password)).toBeTruthy()
     })
 
-    it("should redirect to login if the user email already exists", async() => {
-      // TODO: Implement test
-    })
+    it.todo("should redirect to login if the user email already exists")
   
     it("should invoke NotFoundError if the user does not exist", async () => {
       try {
@@ -154,11 +193,19 @@ describe("users controller", () => {
     })
   
     it("should invoke InternalServerError on db query failure", async () => {
+      await User.create({
+        email: 'wwhite@msn.com', 
+        password: 'ricin'
+      })
+
+      const users = await User.readAll()
+      const userId = users[0].id
+
       jest.spyOn(db, 'first').mockRejectedValue(new Error('oops'));
   
       try {
         await request(app)
-          .get(`${userRoute}/${users[0].id}`)
+          .get(`${userRoute}/${userId}`)
           .set('Authorization', `Bearer ${token}`)
           .set('Content-Type', 'application/json')
           .accept('application/json');
@@ -170,7 +217,28 @@ describe("users controller", () => {
   })
 
   describe("putUser", () => {
+    beforeEach(async() => {
+      await truncateDb()
+      await terminateServer()
+    })
+
     it("should PUT a user email and password", async () => { 
+      await User.create({
+        email: 'wwhite@msn.com', 
+        password: 'ricin'
+      })
+  
+      await User.create({
+        email: 'pinkman.abq@yahoo.com', 
+        password: 'margolis'
+      })
+  
+      await User.create({
+        email: 'gus@pollohermanos.cl',
+        password: 'laundromat'
+      })
+  
+      const users = await User.readAll()
       const userId = users[2].id
       const payload = {
         email: 'mike@msn.com',
@@ -206,11 +274,18 @@ describe("users controller", () => {
     })
   
     it("should invoke InternalServerError when the db query fails", async () => {
+      await User.create({
+        email: 'wwhite@msn.com', 
+        password: 'ricin'
+      })
+      const users = await User.readAll()
+      const userId = users[0].id
+
       jest.spyOn(db, 'first').mockRejectedValue(new Error('oops'));
   
       try {
         await request(app)
-          .get(`${userRoute}/${users[0].id}`)
+          .get(`${userRoute}/${userId}`)
           .set('Authorization', `Bearer ${token}`)
           .set('Content-Type', 'application/json')
           .accept('application/json');
@@ -222,8 +297,20 @@ describe("users controller", () => {
   })
 
   describe("deleteUser", () => {
+    beforeEach(async() => {
+      await truncateDb()
+      await terminateServer()
+    })
+
     it("should DELETE a user and return a 200 status code", async () => {
+      await User.create({
+        email: 'wwhite@msn.com', 
+        password: 'ricin'
+      })
+  
+      const users = await User.readAll()
       const userId = users[0].id;
+
       const res = await request(app)
         .delete(`/users/${userId}/delete`)
         .set("Content-Type", "application/json")
@@ -238,7 +325,7 @@ describe("users controller", () => {
       
       try {
         await User.delete(mockUserId);
-        const res = await request(app)
+        await request(app)
           .delete(`/users/${mockUserId}/delete`)
           .set("Content-Type", "application/json")
           .set("Authorization", `Bearer ${token}`)
@@ -249,11 +336,19 @@ describe("users controller", () => {
     })
 
     it("should invoke InternalServerError when the db query fails", async () => {
+      await User.create({
+        email: 'wwhite@msn.com', 
+        password: 'ricin'
+      })
+  
+      const users = await User.readAll()
+      const userId = users[0].id;
+      
       jest.spyOn(db, 'delete').mockRejectedValue(new Error('oops'));
 
       try {
         await request(app)
-          .get(`${userRoute}/${users[0].id}/delete`)
+          .get(`${userRoute}/${userId}/delete`)
           .set('Authorization', `Bearer ${token}`)
           .set('Content-Type', 'application/json')
           .accept('application/json');
