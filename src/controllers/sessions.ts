@@ -6,27 +6,21 @@ import {
   NotFoundError
 } from '../utils/funcs/errors'
 import { Controller } from '../utils/types/generic'
-import { User } from '../models'
+import { IUserToken, User } from '../models'
 import { 
   handleLoginTokens, 
-  handleLogoutTokens 
-} from '../middleware/tokens'
-import { SessionData } from '../utils/types/express-session'
+  handleLogoutTokens,
+  handleSessionData
+} from '../middleware'
+import { SessionData } from 'src/utils/types/express-session'
+
+type LoginTokenResponse = {
+  access_token?: string,
+  refresh_token?: string
+}
 
 export const sessions: Controller = {
-  // protect: async (req, res) => {
-  //   try {
-  //     localStorage.setItem('sessionId', res.sessionId)
-  //     // TODO: Persistent session storage, not localStorage
-
-  //     const userId = (req.session as SessionData).userId
-  //     res.send(`User Id ${userId} have already logged in`)
-  //   } catch (err) {
-  //     UnauthorizedRequestError("session", res)
-  //   }
-  // },
- 
-  login: async (req, res) => {
+  login: async(req, res) => { 
     try {
       const { email, password } = req.body
 
@@ -46,20 +40,34 @@ export const sessions: Controller = {
       
       if (!userByEmail) {
         NotFoundError("user", res)
-      } else {
+      } 
+      
+      const hashedPass = await argon2.hash(password)
 
-        const hashedPass = await argon2.hash(password)
+      if (!hashedPass) {
+        UnauthorizedRequestError("password", res)
+        res.status(302).redirect('/password/forget')
+      }
 
-        hashedPass
-          ? handleLoginTokens(userByEmail, req, res)
-          : UnauthorizedRequestError("password", res)
+      const userId = userByEmail!.id
+      
+      const tokens: LoginTokenResponse | null | undefined = await handleLoginTokens(userId, req, res)
+
+      const sessions: SessionData | undefined = await handleSessionData(userId, req, res)
+      
+      if (tokens && sessions) {
+        res.status(201).json({
+          ...userByEmail,
+          ...tokens,
+          session_data: sessions 
+        })
       }
     } catch (err: unknown) {
       InternalServerError("login", "user account", res)
     }
   },
 
-  logout: async (req, res) => {
+  logout: async(req, res) => {
     try {
       const userId = req.body.id
       await handleLogoutTokens(userId, res)
@@ -71,5 +79,13 @@ export const sessions: Controller = {
     } catch (err: Error | unknown) {
       InternalServerError("logout", "user", res)
     }
-  }
+  },
+
+  // forgetPassword: async(req, res) => {
+
+  // },
+
+  // resetPassword: async(req, res) => {
+    
+  // }
 }

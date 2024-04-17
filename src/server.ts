@@ -1,21 +1,15 @@
 import cors from 'cors'
 import fs from 'fs'
 import https from 'https'
-import express, {
-  Application,
-  Request,
-  Response
-} from 'express'
+import express, { Application } from 'express'
 import helmet from 'helmet'
 import rateLimit from 'express-rate-limit'
 import session from 'express-session'
-import { SessionData } from './utils/types/express-session'
 import { 
   corsOptions,
   helmetOptions, 
   limiterOptions,
   sessionOptions,
-  setSessionData,
   requireJwt
 } from './middleware'
 import routes from './routes'
@@ -31,6 +25,8 @@ const credentials = {
 }
 
 app.use(express.json())
+app.use("/login", (session(sessionOptions)))
+
 routes.forEach(({ path, router }) => {
   app.use(path, router)
 })
@@ -38,17 +34,9 @@ routes.forEach(({ path, router }) => {
 app.use("/", (
   rateLimit(limiterOptions),
   requireJwt,
-  session(sessionOptions),
-  setSessionData,
   cors(corsOptions),
   helmet(helmetOptions)
 ))
-
-// app.get("/", async (req: any, res: Response) => {
-//   (req.session as SessionData).userId
-//     ? res.redirect('/protected')
-//     : res.redirect('/login')
-// })
 
 export const server = https.createServer(credentials, app);
 

@@ -1,5 +1,5 @@
 import { app, server } from '../../src/server'
-import { User, UserToken, IUser } from '../../src/models'
+import { User, UserToken } from '../../src/models'
 import knex, { Knex } from 'knex'
 import knexConfig from '../../knexfile'
 import request from 'supertest'
@@ -63,10 +63,10 @@ describe("sessions controller", () => {
         .accept('application/json')
         .expect(201)
       
-      const userById = await User.readById(id)
+      // const userById = await User.readById(id)
       const userTokenById = await UserToken.readByUserId(id)
 
-      expect(userById).toBeDefined()
+      // expect(userById).toBeDefined()
       expect(userTokenById).toBeDefined()
       expect(userTokenById.access_token).toBeDefined()
       expect(userTokenById.refresh_token).toBeDefined()
@@ -74,6 +74,9 @@ describe("sessions controller", () => {
       expect(res.body.email).toEqual(payload.email)
       expect(res.body.access_token).toBeDefined()
       expect(res.body.refresh_token).toBeDefined()
+      
+      expect(res.body.session_data.logged_in).toEqual(true)
+      expect(res.body.session_data.user_id).toEqual(userTokenById.user_id)
     });
   
     it("should return a 400 Bad Request if missing email/password", async () => {

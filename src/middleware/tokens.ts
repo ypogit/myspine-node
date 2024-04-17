@@ -8,8 +8,9 @@ import {
   UnauthorizedRequestError 
 } from '../utils/funcs/errors'
 import { v4 } from 'uuid'
-import { UserToken, IUser } from '../models'
+import { UserToken, IUser, IUserToken } from '../models'
 import { JwtPayload } from 'src/utils/types/generic'
+import { UserTokenResponse } from 'src/models/UserToken'
 
 const db = knex(knexConfig)
 const USER_TOKENS_TABLE: string = 'user_tokens'
@@ -67,8 +68,7 @@ export const requireJwt = async(req: any, res: any, next: any) => {
   }
 }
 
-export const handleLoginTokens = async(userByEmail: IUser, req: any, res: any) => {
-  const userId = userByEmail.id
+export const handleLoginTokens = async(userId: number, _req: any, res: any): Promise<Partial<IUserToken> | null | undefined> => {
   const expiresIn = res.body?.expiresIn
   const accessToken = generateToken(
     userId, 
@@ -83,8 +83,10 @@ export const handleLoginTokens = async(userByEmail: IUser, req: any, res: any) =
 
     if (existingTokens && existingTokens.access_token_expires_at > new Date(Date.now())) {
       // Skip insertion if user already has valid tokens
-      res.status(200).json({ accessToken, refreshToken })
-      return
+      return { 
+        access_token: accessToken, 
+        refresh_token: refreshToken 
+      }
     }
 
     const tokens = await UserToken.create({
@@ -93,15 +95,13 @@ export const handleLoginTokens = async(userByEmail: IUser, req: any, res: any) =
       refresh_token: refreshToken
     })
 
-    if (tokens) {
-      res.status(201).json({ 
-        email: userByEmail.email,
-        ...tokens
-      })
+    return { 
+      access_token: tokens?.access_token, 
+      refresh_token: tokens?.refresh_token 
     }
   } catch (err) {
-    console.log(err)
     InternalServerError("login", "user", res)
+    return null
   }
 }
 

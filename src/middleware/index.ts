@@ -2,12 +2,14 @@ export { corsOptions } from './corsOptions'
 export { helmetOptions } from './helmetOptions'
 export { limiterOptions } from './limiterOptions'
 export { 
-  setSessionData,
+  handleSessionData,
   sessionOptions, 
   sessionStoreOptions, 
 } from './sessions'
 export { 
   generateToken,
-  verifyToken,
-  requireJwt
+  handleLoginTokens,
+  handleLogoutTokens,
+  requireJwt,
+  verifyToken
 } from './tokens'
