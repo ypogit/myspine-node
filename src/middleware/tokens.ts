@@ -10,7 +10,7 @@ import {
 import { v4 } from 'uuid'
 import { UserToken, IUser, IUserToken } from '../models'
 import { JwtPayload } from 'src/utils/types/generic'
-import { UserTokenResponse } from 'src/models/UserToken'
+import argon2 from 'argon2'
 
 const db = knex(knexConfig)
 const USER_TOKENS_TABLE: string = 'user_tokens'
@@ -48,6 +48,11 @@ export const verifyToken = async (token: string): Promise<JwtPayload> => {
       resolve(decoded as JwtPayload);
     })
   })
+}
+
+export const generateResetToken = async() => {
+  const resetToken = crypto.randomBytes(20).toString('hex')
+  return await argon2.hash(resetToken)
 }
 
 export const requireJwt = async(req: any, res: any, next: any) => {

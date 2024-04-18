@@ -6,13 +6,17 @@ import {
   NotFoundError
 } from '../utils/funcs/errors'
 import { Controller } from '../utils/types/generic'
-import { IUserToken, User } from '../models'
+import { User, UserToken } from '../models'
 import { 
   handleLoginTokens, 
   handleLogoutTokens,
   handleSessionData
 } from '../middleware'
 import { SessionData } from 'src/utils/types/express-session'
+import { 
+  generateResetToken,
+  emailPasswordReset 
+} from '../middleware'
 
 type LoginTokenResponse = {
   access_token?: string,
@@ -36,10 +40,11 @@ export const sessions: Controller = {
         BadRequestError("password", res)
       }
 
-      const userByEmail = await User.readByEmail(email)
+      const user = await User.readByEmail(email)
       
-      if (!userByEmail) {
+      if (!user) {
         NotFoundError("user", res)
+        res.status(302).redirect('/password/forget')
       } 
       
       const hashedPass = await argon2.hash(password)
@@ -49,7 +54,7 @@ export const sessions: Controller = {
         res.status(302).redirect('/password/forget')
       }
 
-      const userId = userByEmail!.id
+      const userId = user!.id
       
       const tokens: LoginTokenResponse | null | undefined = await handleLoginTokens(userId, req, res)
 
@@ -57,7 +62,7 @@ export const sessions: Controller = {
       
       if (tokens && sessions) {
         res.status(201).json({
-          ...userByEmail,
+          ...user,
           ...tokens,
           session_data: sessions 
         })
@@ -81,11 +86,66 @@ export const sessions: Controller = {
     }
   },
 
-  // forgetPassword: async(req, res) => {
+  forgetPassword: async(req, res) => {
+    const email = req.body
+    const clientURL = process.env.CLIENT_URL
 
-  // },
+    try {
+      const user = await User.readByEmail(email)
 
-  // resetPassword: async(req, res) => {
+      if (!user) {
+        BadRequestError("email", res)
+      }
+
+      const userId = user!.id
+      const resetToken = await generateResetToken()
+
+      if (!resetToken) {
+        throw new Error("Unable to generate reset token")
+      }
+
+      await UserToken.update(userId, resetToken)
+
+      const resetURL = `${clientURL}/passwordReset?token=${resetToken}&id=${userId}`
+
+      emailPasswordReset(user!.email, resetURL)
+
+      res.status(201).json({ message: "Password reset successfully requested" })
+    } catch (err: Error | unknown) {
+      InternalServerError("update", "password", res)
+    }
+  },
+
+  resetPassword: async(req, res) => {
+    try {
+      const {
+        resetToken, 
+        userId, 
+        password 
+      } = req.body
+
+      if (!resetToken) {
+        BadRequestError("reset token", res)
+      }
+
+      if (!userId) {
+        BadRequestError("user", res)
+      }
+
+      if (!password) {
+        BadRequestError("password", res)
+      }
+
+      const user = await UserToken.readByUserId(userId)
+
+      if (!user) {
+        NotFoundError("user", res)
+      }
+
+      // await UserToken.update({ })
     
-  // }
+    } catch (err: Error | unknown) {
+      InternalServerError("update", "password", res)
+    }
+  }
 }

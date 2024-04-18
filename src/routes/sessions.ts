@@ -6,7 +6,7 @@ const router = Router()
 router.post('/login', sessions.login)
 router.post('/logout', sessions.logout)
 
-// router.post('/password/forgot', sessions.forgotPassword)
-// router.post('/password/reset', sessions.resetPassword)
+router.post('/password/forgot', sessions.forgotPassword)
+router.post('/password/reset', sessions.resetPassword)
 
 export { router as sessionsRouter }

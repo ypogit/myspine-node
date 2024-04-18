@@ -52,6 +52,17 @@ export class UserToken {
       .first<IUserToken, Pick<IUserToken, "user_id">>()
   }
 
+  static async update(userId: number, resetToken: string): Promise<IUserToken> {
+    await db(USER_TOKENS_TABLE)
+      .where('user_id', '=', userId)
+      .update<Partial<IUserToken>>({
+        reset_token: resetToken
+      })
+
+    const updatedUserToken = await UserToken.readByUserId(userId)
+    return updatedUserToken
+  }
+
   static async delete(userId: number) {
     return await db(USER_TOKENS_TABLE)
       .where('user_id', '=', userId)

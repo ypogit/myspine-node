@@ -8,8 +8,12 @@ export {
 } from './sessions'
 export { 
   generateToken,
+  generateResetToken,
   handleLoginTokens,
   handleLogoutTokens,
   requireJwt,
   verifyToken
 } from './tokens'
+export {
+  emailPasswordReset
+} from './mailerOptions'

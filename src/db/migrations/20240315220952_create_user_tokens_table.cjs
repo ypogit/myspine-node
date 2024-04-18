@@ -15,6 +15,7 @@ exports.up = function(knex) {
          .onDelete('CASCADE');
     table.text('access_token').notNullable();
     table.text('refresh_token').notNullable();
+    table.text('reset_password_token');
     table.timestamp('access_token_expires_at').notNullable();
   })
 };
