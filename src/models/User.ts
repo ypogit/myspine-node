@@ -60,8 +60,8 @@ export class User {
   
   static async delete(userId: number) {
     return await db(USERS_TABLE)
-        .where('id', '=', userId)
-        .first<IUser, Pick<IUser, 'id'>>()
-        .delete()
+      .where('id', '=', userId)
+      .first<IUser, Pick<IUser, 'id'>>()
+      .delete()
   }
 }

@@ -15,5 +15,5 @@ export {
   verifyToken
 } from './tokens'
 export {
-  emailPasswordReset
+  requestMail
 } from './mailerOptions'

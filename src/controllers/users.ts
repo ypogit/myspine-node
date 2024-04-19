@@ -47,12 +47,10 @@ export const users: Controller = {
 
       if (!email) {
         BadRequestError("email", res)
-        // TODO: Forgot email?
       }
 
       if (!password) {
         BadRequestError("password", res);
-        // TODO: Forgot password?
       }
       
       const hashedPass: string | undefined = password

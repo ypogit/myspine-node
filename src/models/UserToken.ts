@@ -7,6 +7,7 @@ export interface IUserToken {
   user_id: number,
   access_token: string,
   refresh_token: string,
+  reset_password_token?: string,
   access_token_expires_at: Date,
   created_at: Date,
   updated_at: Date
@@ -24,10 +25,14 @@ export class UserToken {
     const {
       user_id,
       access_token,
-      refresh_token
+      refresh_token,
+      reset_password_token
     } = TokenBody
 
-    const [tokens] = await db(USER_TOKENS_TABLE)
+    let tokens;
+
+    if (access_token && refresh_token) {
+      [tokens] = await db(USER_TOKENS_TABLE)
       .insert<IUserToken>({
         user_id,
         access_token,
@@ -37,6 +42,17 @@ export class UserToken {
         ))
       })
       .returning('*')
+    }
+
+    if (reset_password_token) {
+      [tokens] = await db(USER_TOKENS_TABLE)
+      .insert<IUserToken>({
+        user_id,
+        reset_password_token,
+      })
+      .returning('*')
+    }
+
     return tokens
   }
 
@@ -52,7 +68,7 @@ export class UserToken {
       .first<IUserToken, Pick<IUserToken, "user_id">>()
   }
 
-  static async update(userId: number, resetToken: string): Promise<IUserToken> {
+  static async updateResetToken({ userId, resetToken}: { userId: number, resetToken: string }): Promise<IUserToken> {
     await db(USER_TOKENS_TABLE)
       .where('user_id', '=', userId)
       .update<Partial<IUserToken>>({
