@@ -21,13 +21,13 @@ const USER_TOKENS_TABLE = 'user_tokens'
 const db = knex(knexConfig)
 
 export class UserToken {
-  static async create(TokenBody: Partial<IUserToken>): Promise<IUserToken | null> {
+  static async create(tokenBody: Partial<IUserToken>): Promise<IUserToken | null> {
     const {
       user_id,
       access_token,
       refresh_token,
       reset_password_token
-    } = TokenBody
+    } = tokenBody
 
     let tokens;
 

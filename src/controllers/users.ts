@@ -63,7 +63,6 @@ export const users: Controller = {
 
       if (email && hashedPass) {
         const user = await User.create({ email, password: hashedPass });
-
         res.status(201).json(user);
       }
     } catch (err: Error | unknown) {
