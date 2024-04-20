@@ -32,7 +32,7 @@ export const sessions: Controller = {
       const { email, password } = req.body
 
       validatePayload({
-        payload: { email, password },
+        payload: req.body,
         requiredFields: ['email', 'password'],
         res
       })
@@ -42,7 +42,7 @@ export const sessions: Controller = {
       
       if (!user) {
         NotFoundError("user", res)
-        res.status(302).redirect('/password/forget')
+        res.status(302).redirect('/login')
       }
       
       const hashedPass = await argon2.hash(password)
@@ -70,7 +70,7 @@ export const sessions: Controller = {
 
   logout: async(req, res) => {
     try {
-      const userId = req.body.id
+      const userId = parseInt(req.body.id)
       await handleLogoutTokens(userId, res)
       
       req.session.destroy()
@@ -95,22 +95,27 @@ export const sessions: Controller = {
       }
 
       const userId = user!.id
-      const resetToken = await generateResetToken()
+      const {
+        reset_password_token,
+        reset_password_token_expiration_date
+      } = await generateResetToken()
 
-      if (!resetToken) {
+      if (!reset_password_token) {
         throw new Error("Unable to generate reset token")
       }
 
       await UserToken.create({ 
         user_id: userId, 
-        reset_password_token: resetToken
+        reset_password_token,
+        reset_password_token_expiration_date
       })
 
-      const resetURL = `${clientURL}/passwordReset?token=${resetToken}&id=${userId}`
+      const resetURL = `${clientURL}/passwordReset?token=${reset_password_token}&userId=${userId}`
 
       requestMail({
-        to: user!.email,
         mailType: 'reset_pass_requested',
+        to: user!.email,
+        from: undefined,
         url: resetURL 
       })
 
@@ -122,11 +127,11 @@ export const sessions: Controller = {
 
   resetPassword: async(req, res) => {
     try {
-      const { reset_token, user_id, password } = req.body
+      const { reset_password_token, user_id, password } = req.body
 
       validatePayload({
-        payload: { reset_token, user_id, password },
-        requiredFields: ['reset_token', 'user_id', 'password'],
+        payload: req.body,
+        requiredFields: ['reset_password_token', 'user_id', 'password'],
         res
       })
 
@@ -143,9 +148,23 @@ export const sessions: Controller = {
         InternalServerError("update", "user", res)
       }
 
+      const userToken = await UserToken.readByUserId(user_id)
+
+      if (!userToken) {
+        NotFoundError("user token", res)
+      }
+
+      const exp = userToken.reset_password_token_expiration_date
+      const isTokenUnexpired = exp && (exp > new Date(Date.now())
+)
+      if (reset_password_token === userToken.reset_password_token && isTokenUnexpired) {
+        await UserToken.updateResetToken({ userId: user_id, resetToken: undefined })
+      }
+
       requestMail({
+        mailType: 'reset_pass_completed',
         to: user!.email,
-        mailType: 'reset_pass_completed'
+        from: undefined
       })
       
       res.status(200).json({ message: "Password reset successfully" })

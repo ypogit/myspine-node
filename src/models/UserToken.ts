@@ -8,6 +8,7 @@ export interface IUserToken {
   access_token: string,
   refresh_token: string,
   reset_password_token?: string,
+  reset_password_token_expiration_date?: Date,
   access_token_expires_at: Date,
   created_at: Date,
   updated_at: Date
@@ -47,8 +48,8 @@ export class UserToken {
     if (reset_password_token) {
       [tokens] = await db(USER_TOKENS_TABLE)
       .insert<IUserToken>({
-        user_id,
-        reset_password_token,
+        user_id ,
+        reset_password_token
       })
       .returning('*')
     }
@@ -68,11 +69,11 @@ export class UserToken {
       .first<IUserToken, Pick<IUserToken, "user_id">>()
   }
 
-  static async updateResetToken({ userId, resetToken}: { userId: number, resetToken: string }): Promise<IUserToken> {
+  static async updateResetToken({ userId, resetToken }: { userId: number, resetToken?: string }): Promise<IUserToken> {
     await db(USER_TOKENS_TABLE)
       .where('user_id', '=', userId)
       .update<Partial<IUserToken>>({
-        reset_token: resetToken
+        reset_password_token: resetToken
       })
 
     const updatedUserToken = await UserToken.readByUserId(userId)

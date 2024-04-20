@@ -91,6 +91,7 @@ export const users: Controller = {
       if (password) {
         const hashedPass = await argon2.hash(password)
         !hashedPass && ExternalServerError("argon 2 hashing", res)
+
         payload.password = hashedPass
       }
 

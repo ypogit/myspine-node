@@ -1,11 +1,15 @@
 import nodemailer from 'nodemailer'
 
 type MailOptions = {
+  mailType: string,
   to: string,
-  from?: string,
-  subject?: string,
-  html?: string
+  from: string,
+  subject: string,
+  url?: string,
+  html?: string,
+  content?: string
 }
+
 type MailContent = {
   [key: string]: Partial<MailOptions>
 }
@@ -18,30 +22,47 @@ const transporter = nodemailer.createTransport({
   }
 })
 
-export const requestMail = async({ to, mailType, url }: { 
-  to: string, 
-  mailType: 'reset_pass_requested' | 'reset_pass_completed', 
-  url?: string 
+export const requestMail = async({ mailType, to, from, url, content }: {
+  mailType: 'reset_pass_requested' | 'reset_pass_completed' | 'appointment_requested',
+  to?: string,
+  from?: string,
+  url?: string,
+  content?: string
 }) => {
 
   const mailContent: MailContent = {
     reset_pass_requested: {
+      from: `Peace of Mind Spine <${process.env.MAILER_EMAIL}>`,
+      to,
       subject: "Password reset",
-      html: `<h1>Peace of Mind SPINE.com</h1><p>Please click on the following link <a href=${url}>${url}</a> to reset your password</p>`,
+      html: `You have requested a password reset for <a href="https://peaceofmindspine.com"}>peaceofmindspine.com</a> <p>Please click on the following link <a href=${url}>${url}</a> to reset your password.</p>`,
     },
     reset_pass_completed: {
+      from: `Peace of Mind Spine <${process.env.MAILER_EMAIL}>`,
+      to,
       subject: "Successfully reset password",
-      html: `<h1>Peace of Mind SPINE.com</h1><p>You have successfully reset your password</p>`
+      html: `<p>Done! You have successfully reset your password for <a href="https://peaceofmindspine.com"}>peaceofmindspine.com</a></p>`
+    },
+    appointment_requested: {
+      from,
+      to: process.env.MAILER_EMAIL,
+      subject: "Request for Appointment",
+      html: `<!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Email Title</title>
+        </head>
+        <body>
+          <p>This is an example email.</p>
+          <p>Regards,<br>Peace of Mind SPINE.com</p>
+        </body>
+        </html>`
     }
   }
 
-  const mailOptions: MailOptions = {
-    from: `Peace of Mind Spine <${process.env.MAILER_EMAIL}>`,
-    to,
-    ...mailContent[mailType]
-  }
-
-  transporter.sendMail(mailOptions, (err, info) => {
+  transporter.sendMail(mailContent[mailType], (err, info) => {
     if (err) {
       throw new Error(err.message)
     } else {

@@ -7,6 +7,7 @@ import { User, IUser } from '../models'
 import { IPatientRecord, PatientRecord } from '../models/PatientRecord'
 import { validatePayload } from '../utils/funcs/validation'
 import { sanitizeEmail } from '../utils/funcs/strings'
+import { requestMail } from '../middleware'
 
 export const patients: Controller = {
   getPatientByUserId: async (req, res) => {
@@ -38,20 +39,50 @@ export const patients: Controller = {
       } = req.body
 
       validatePayload({ 
-        payload: { firstname, lastname, pain_description, pain_degree, address, email, phone_number }, 
+        payload: req.body, 
         requiredFields: ['firstname', 'lastname', 'pain_description', 'pain_degree', 'email', 'phone_number'],
         res
       })
 
+      const sanitizedEmail = sanitizeEmail(email)
       const patientRecord = await PatientRecord.create({ 
         firstname, 
         lastname, 
         pain_description, 
         pain_degree, 
         address, 
-        email: sanitizeEmail(email), 
+        email: sanitizedEmail, 
         phone_number 
       })
+
+      if (patientRecord) {
+        requestMail({
+          mailType: 'appointment_requested',
+          from: sanitizedEmail,
+          content: `<!DOCTYPE html>
+          <html>
+          <head>
+            <style>
+              .bold-text {
+                font-weight: bold;
+              }
+            </style>
+          </head>
+          <body>
+            <p>
+              <span class="bold-text">Greetings,</span> Doctor!<br><br>
+              The following patient has requested an appointment with you.<br><br>
+              <span class="bold-text">Name:</span> ${firstname} ${lastname}<br>
+              <span class="bold-text">Pain description:</span> ${pain_description}<br>
+              <span class="bold-text">Pain degree:</span> ${pain_degree}<br>
+              <span class="bold-text">Address:</span> ${address || 'N/A'}<br>
+              <span class="bold-text">Email:</span> ${email}<br>
+              <span class="bold-text">Phone number:</span> ${phone_number}<br>
+            </p>
+          </body>
+          </html>` 
+        })
+      }
 
       res.status(201).json(patientRecord)
     } catch (err: Error | unknown) {

@@ -52,7 +52,14 @@ export const verifyToken = async (token: string): Promise<JwtPayload> => {
 
 export const generateResetToken = async() => {
   const resetToken = crypto.randomBytes(20).toString('hex')
-  return await argon2.hash(resetToken)
+  const expirationDate = new Date()
+
+  expirationDate.setHours(expirationDate.getHours() + 24) // Expires in 24h
+
+  return {
+    reset_password_token: await argon2.hash(resetToken),
+    reset_password_token_expiration_date: expirationDate
+  }
 }
 
 export const requireJwt = async(req: any, res: any, next: any) => {
