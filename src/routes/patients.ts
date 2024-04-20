@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { patients } from 'src/controllers/patients'
+import { patients } from '../controllers/patients'
 
 const router = Router()
 

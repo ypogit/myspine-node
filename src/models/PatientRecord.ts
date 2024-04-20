@@ -1,5 +1,5 @@
 import knex from "knex"
-import knexConfig from "knexfile"
+import knexConfig from "../../knexfile"
 
 export interface IPatientRecord {
   id: Number
@@ -9,7 +9,8 @@ export interface IPatientRecord {
   pain_description: string
   pain_degree: BigInteger
   address: string
-  phone_number?: string
+  email: string,
+  phone_number: string
 }
 
 const PATIENT_RECORDS_TABLE = 'patient_records'
@@ -23,6 +24,7 @@ export class PatientRecord {
         lastname: patientRecord.lastname,
         pain_description: patientRecord.pain_description,
         pain_degress: patientRecord.pain_degree,
+        email: patientRecord.email,
         phone_number: patientRecord.phone_number
       })
       .returning('*')

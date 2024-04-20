@@ -63,10 +63,8 @@ describe("sessions controller", () => {
         .accept('application/json')
         .expect(201)
       
-      // const userById = await User.readById(id)
       const userTokenById = await UserToken.readByUserId(id)
 
-      // expect(userById).toBeDefined()
       expect(userTokenById).toBeDefined()
       expect(userTokenById.access_token).toBeDefined()
       expect(userTokenById.refresh_token).toBeDefined()
@@ -89,7 +87,7 @@ describe("sessions controller", () => {
         .expect(400)
 
         expect(res.status).toBe(400)
-        expect(res.body.message).toEqual("Email & Password Required")
+        expect(res.body.message).toEqual("Email, Password Required")
       })
   })
 

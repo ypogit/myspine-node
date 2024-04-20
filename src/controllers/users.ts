@@ -1,12 +1,14 @@
 import argon2 from 'argon2'
 import { 
-  BadRequestError,
   ExternalServerError,
   InternalServerError,
   NotFoundError
 } from '../utils/funcs/errors'
 import { Controller } from '../utils/types/generic'
 import { User, IUser } from '../models'
+import { sanitizeEmail } from '../utils/funcs/strings'
+import { validatePayload } from '../utils/funcs/validation'
+
 
 export const users: Controller = {
   getUsers: async (_req, res) => {
@@ -28,7 +30,6 @@ export const users: Controller = {
       } else {
         NotFoundError("user", res)
       }
-
     } catch (err: unknown) {
       InternalServerError("get", "user", res)
     }
@@ -39,19 +40,18 @@ export const users: Controller = {
       let email: string | undefined = req.body?.email
       let password: string | undefined = req.body?.password
 
-      const existingUser = email && await User.readByEmail(email)
+      const sanitizedEmail = email && sanitizeEmail(email)
+      const existingUser = sanitizedEmail && await User.readByEmail(sanitizedEmail)
 
       if (existingUser) {
         res.redirect('/login')
       }
 
-      if (!email) {
-        BadRequestError("email", res)
-      }
-
-      if (!password) {
-        BadRequestError("password", res);
-      }
+      validatePayload({ 
+        payload: { email, password }, 
+        requiredFields: ['email', 'password'], 
+        res
+      })
       
       const hashedPass: string | undefined = password
         ? await argon2.hash(password)
@@ -62,7 +62,7 @@ export const users: Controller = {
       }
 
       if (email && hashedPass) {
-        const user = await User.create({ email, password: hashedPass });
+        const user = await User.create({ email: sanitizedEmail, password: hashedPass });
         res.status(201).json(user);
       }
     } catch (err: Error | unknown) {
@@ -82,23 +82,21 @@ export const users: Controller = {
         NotFoundError("user", res)
       }
       
-      let hashedPass: string | undefined
+      let payload: Partial<IUser> = {}
+  
+      if (email) {
+        payload.email = sanitizeEmail(email)
+      }
+
       if (password) {
-        hashedPass = password
-          ? await argon2.hash(password)
-          : undefined;
-      }
-      
-      if (!hashedPass) {
-        ExternalServerError("argon 2 hashing", res);
+        const hashedPass = await argon2.hash(password)
+        !hashedPass && ExternalServerError("argon 2 hashing", res)
+        payload.password = hashedPass
       }
 
-      if (email || hashedPass) {
-        const payload = { email, password: hashedPass }
-        const updatedUser = await User.update(userId, payload);
+      const updatedUser = await User.update(userId, payload);
 
-        res.status(201).json(updatedUser)
-      }
+      res.status(201).json(updatedUser)
     } catch (err: Error | unknown) {
       InternalServerError("update", "user", res)
     }

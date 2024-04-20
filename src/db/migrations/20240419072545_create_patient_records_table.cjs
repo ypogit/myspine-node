@@ -18,7 +18,8 @@ exports.up = function(knex) {
     table.text('pain_description').notNullable()
     table.integer('pain_degree').notNullable()
     table.text('address')
-    table.integer('phone_number')
+    table.text('email').notNullable()
+    table.integer('phone_number').notNullable()
   })
 };
 

@@ -18,6 +18,8 @@ import {
   generateResetToken,
   requestMail
 } from '../middleware'
+import { validatePayload } from '../utils/funcs/validation'
+import { sanitizeEmail } from '../utils/funcs/strings'
 
 type LoginTokenResponse = {
   access_token?: string,
@@ -29,24 +31,19 @@ export const sessions: Controller = {
     try {
       const { email, password } = req.body
 
-      if (!email && !password) {
-        BadRequestError("email & password", res)
-      }
+      validatePayload({
+        payload: { email, password },
+        requiredFields: ['email', 'password'],
+        res
+      })
 
-      if (!email) {
-        BadRequestError("email", res)
-      }
-
-      if (!password) {
-        BadRequestError("password", res)
-      }
-
-      const user = await User.readByEmail(email)
+      const sanitizedEmail = sanitizeEmail(email)
+      const user = await User.readByEmail(sanitizedEmail)
       
       if (!user) {
         NotFoundError("user", res)
         res.status(302).redirect('/password/forget')
-      } 
+      }
       
       const hashedPass = await argon2.hash(password)
 
@@ -56,9 +53,7 @@ export const sessions: Controller = {
       }
 
       const userId = user!.id
-      
       const tokens: LoginTokenResponse | null | undefined = await handleLoginTokens(userId, req, res)
-
       const sessions: SessionData | undefined = await handleSessionData(userId, req, res)
       
       if (tokens && sessions) {
@@ -92,7 +87,8 @@ export const sessions: Controller = {
     const clientURL = process.env.CLIENT_URL
 
     try {
-      const user = await User.readByEmail(email)
+      const sanitizedEmail = sanitizeEmail(email)
+      const user = await User.readByEmail(sanitizedEmail)
 
       if (!user) {
         BadRequestError("email", res)
@@ -126,19 +122,13 @@ export const sessions: Controller = {
 
   resetPassword: async(req, res) => {
     try {
-      const { resetToken, userId, password } = req.body
+      const { reset_token, user_id, password } = req.body
 
-      if (!resetToken) {
-        BadRequestError("reset password token", res)
-      }
-
-      if (!userId) {
-        BadRequestError("user", res)
-      }
-
-      if (!password) {
-        BadRequestError("password", res)
-      }
+      validatePayload({
+        payload: { reset_token, user_id, password },
+        requiredFields: ['reset_token', 'user_id', 'password'],
+        res
+      })
 
       const hashedPass: string | undefined = await argon2.hash(password)
   
@@ -147,7 +137,7 @@ export const sessions: Controller = {
       }
 
       const userData = { password: hashedPass }
-      const user = await User.update(userId, userData)
+      const user = await User.update(user_id, userData)
 
       if (!user) {
         InternalServerError("update", "user", res)
