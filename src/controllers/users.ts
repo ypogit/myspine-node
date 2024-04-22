@@ -1,5 +1,6 @@
 import argon2 from 'argon2'
 import { 
+  BadRequestError,
   ExternalServerError,
   InternalServerError,
   NotFoundError
@@ -7,8 +8,7 @@ import {
 import { Controller } from '../utils/types/generic'
 import { User, IUser } from '../models'
 import { sanitizeEmail } from '../utils/funcs/strings'
-import { validatePayload } from '../utils/funcs/validation'
-
+import { containsMissingFields } from '../utils/funcs/validation'
 
 export const users: Controller = {
   getUsers: async (_req, res) => {
@@ -47,11 +47,14 @@ export const users: Controller = {
         res.redirect('/login')
       }
 
-      validatePayload({ 
+      const missingFields = containsMissingFields({ 
         payload: { email, password }, 
-        requiredFields: ['email', 'password'], 
-        res
+        requiredFields: ['email', 'password']
       })
+
+      if (missingFields) {
+        BadRequestError(missingFields, res)
+      }
       
       const hashedPass: string | undefined = password
         ? await argon2.hash(password)

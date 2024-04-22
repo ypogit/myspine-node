@@ -23,7 +23,7 @@
     "uuid": "^9.0.1"
   },
   "scripts": {
-    "test": "set NODE_ENV=test && yarn knex migrate:latest && jest --watchAll",
+    "test": "set NODE_ENV=test && yarn knex migrate:latest --knexfile=knexfile.js && jest --watchAll",
     "build": "rm -rf dist && tsc",
     "start": "nodemon --experimental-specifier-resolution=node",
     "dev": "set NODE_ENV=development && yarn build && yarn start",

@@ -29,12 +29,12 @@ describe("sessions controller", () => {
   describe("login", () => {
     const loginRoute = '/login'
   
-    beforeEach(async() => {
-      await truncateDb()
-      await terminateServer()
-    })
+    // beforeEach(async() => {
+    //   await truncateDb()
+    // })
 
     it("should login and return tokens", async() => {
+      await truncateDb()
       await User.create({
         email: 'wwhite@msn.com',
         password: 'ricin'
@@ -78,6 +78,7 @@ describe("sessions controller", () => {
     });
   
     it("should return a 400 Bad Request if missing email/password", async () => {
+      await truncateDb()
       const res = await request(app)
         .post(loginRoute)
         .send({})
@@ -141,7 +142,7 @@ describe("sessions controller", () => {
   
         const signOutRes = await request(app)
           .post(`${logoutRoute}`)
-          .send({ id: userId })
+          .send({ userId })
           .set('Content-Type', 'application/json')
           .expect(204)
   

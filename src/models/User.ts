@@ -47,12 +47,19 @@ export class User {
   }
 
   static async update(userId: number, userData: Partial<IUser>) {
+    const payload: { [key:string]: string } = {}
+
+    if (userData.email) {
+      payload.email = userData.email
+    }
+
+    if  (userData.password) {
+      payload.password = userData.password
+    }
+
     await db(USERS_TABLE)
       .where('id', '=', userId)
-      .update<IUser>({ 
-        email: userData.email || db.raw('email'), 
-        password: db.raw('?', [userData.password]) || db.raw('password')
-      }) // .where() && .update() does not bind parameters
+      .update<IUser>(payload) // .where() && .update() does not bind parameters
 
     const updatedUser = await User.readById(userId)
     return updatedUser

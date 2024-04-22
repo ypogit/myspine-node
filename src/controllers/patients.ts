@@ -1,26 +1,26 @@
 import { 
+  BadRequestError,
   InternalServerError,
   NotFoundError,
 } from '../utils/funcs/errors'
 import { Controller } from '../utils/types/generic'
-import { User, IUser } from '../models'
-import { IPatientRecord, PatientRecord } from '../models/PatientRecord'
-import { validatePayload } from '../utils/funcs/validation'
+import { IPatient, Patient } from '../models'
+import { containsMissingFields } from '../utils/funcs/validation'
 import { sanitizeEmail } from '../utils/funcs/strings'
-import { requestMail } from '../middleware'
+// import { requestMail } from '../middleware'
+import { User } from '../models'
 
 export const patients: Controller = {
-  getPatientByUserId: async (req, res) => {
+  getPatientById: async (req, res) => {
     try {
-      const userId: number = parseInt(req.params.id)
-      const user: IUser = await User.readById(userId)
+      const patientId: number = parseInt(req.params.id)
+      const patient = await Patient.readById(patientId)
 
-      if (!user) {
+      if (!patient) {
         NotFoundError("patient", res)
       }
 
-      const patientRecord = await PatientRecord.readByUserId(userId)
-      res.status(200).json(patientRecord)
+      res.status(200).json(patient)
     } catch (err: unknown) {
       InternalServerError("get", "user", res)
     }
@@ -29,6 +29,7 @@ export const patients: Controller = {
   postPatient: async (req, res) => {
     try {
       let {
+        user_id,
         firstname,
         lastname,
         pain_description,
@@ -38,15 +39,20 @@ export const patients: Controller = {
         phone_number
       } = req.body
 
-      validatePayload({ 
-        payload: req.body, 
-        requiredFields: ['firstname', 'lastname', 'pain_description', 'pain_degree', 'email', 'phone_number'],
-        res
+      const missingFields = containsMissingFields({ 
+        payload: req.body,
+        requiredFields: ['firstname', 'lastname', 'pain_description', 'pain_degree', 'email', 'phone_number']
       })
 
+      if (missingFields) {
+        return 
+      }
+
+      const user = await User.readByEmail(email) || undefined
       const sanitizedEmail = sanitizeEmail(email)
-      const patientRecord = await PatientRecord.create({ 
-        firstname, 
+      const patient = await Patient.create({ 
+        user_id,
+        firstname,
         lastname, 
         pain_description, 
         pain_degree, 
@@ -55,36 +61,36 @@ export const patients: Controller = {
         phone_number 
       })
 
-      if (patientRecord) {
-        requestMail({
-          mailType: 'appointment_requested',
-          from: sanitizedEmail,
-          content: `<!DOCTYPE html>
-          <html>
-          <head>
-            <style>
-              .bold-text {
-                font-weight: bold;
-              }
-            </style>
-          </head>
-          <body>
-            <p>
-              <span class="bold-text">Greetings,</span> Doctor!<br><br>
-              The following patient has requested an appointment with you.<br><br>
-              <span class="bold-text">Name:</span> ${firstname} ${lastname}<br>
-              <span class="bold-text">Pain description:</span> ${pain_description}<br>
-              <span class="bold-text">Pain degree:</span> ${pain_degree}<br>
-              <span class="bold-text">Address:</span> ${address || 'N/A'}<br>
-              <span class="bold-text">Email:</span> ${email}<br>
-              <span class="bold-text">Phone number:</span> ${phone_number}<br>
-            </p>
-          </body>
-          </html>` 
-        })
-      }
+      // if (Patient) {
+      //   requestMail({
+      //     mailType: 'appointment_requested',
+      //     from: sanitizedEmail,
+      //     content: `<!DOCTYPE html>
+      //     <html>
+      //     <head>
+      //       <style>
+      //         .bold-text {
+      //           font-weight: bold;
+      //         }
+      //       </style>
+      //     </head>
+      //     <body>
+      //       <p>
+      //         <span class="bold-text">Greetings,</span> Doctor!<br><br>
+      //         The following patient has requested an appointment with you.<br><br>
+      //         <span class="bold-text">Name:</span> ${firstname} ${lastname}<br>
+      //         <span class="bold-text">Pain description:</span> ${pain_description}<br>
+      //         <span class="bold-text">Pain degree:</span> ${pain_degree}<br>
+      //         <span class="bold-text">Address:</span> ${address || 'N/A'}<br>
+      //         <span class="bold-text">Email:</span> ${email}<br>
+      //         <span class="bold-text">Phone number:</span> ${phone_number}<br>
+      //       </p>
+      //     </body>
+      //     </html>` 
+      //   })
+      // }
 
-      res.status(201).json(patientRecord)
+      res.status(201).json(Patient)
     } catch (err: Error | unknown) {
       InternalServerError("create", "user", res)
     }
@@ -92,8 +98,9 @@ export const patients: Controller = {
 
   putPatient: async (req, res) => {
     try {
-      const userId = req.params.id
+      const patientId = req.params.id
       let {
+        user_id,
         firstname,
         lastname,
         pain_description,
@@ -103,13 +110,13 @@ export const patients: Controller = {
         phone_number
       } = req.body
 
-      const patient = await PatientRecord.readByUserId(userId)
+      const patient = await Patient.readById(patientId)
       
       if (!patient) {
         throw new Error('User does not exist')
       }
 
-      let payload: Partial<IPatientRecord> = {}
+      let payload: Partial<IPatient> = {}
 
       if (firstname) {
         payload.firstname = firstname
@@ -136,11 +143,16 @@ export const patients: Controller = {
       }
 
       if (phone_number) {
-        payload.phone_number = phone_number
+        const missingFields = containsMissingFields({ 
+          payload: req.body, 
+          requiredFields: ['firstname', 'lastname', 'pain_description', 'pain_degree', 'email', 'phone_number'],
+        })
+
+        missingFields && BadRequestError(missingFields, res)
       }
 
-      const patientRecord = await PatientRecord.update(userId, payload)
-      res.status(201).json(patientRecord)
+      const updatedPatient = await Patient.update(patientId, payload)
+      res.status(201).json(updatedPatient)
     } catch (err: Error | unknown) {
       InternalServerError("update", "user", res)
     }
@@ -149,7 +161,7 @@ export const patients: Controller = {
   deletePatient: async (req, res) => {
     try {
       const patientId: number = parseInt(req.params.id)
-      const patientDeleted: number = await PatientRecord.delete(patientId)
+      const patientDeleted: number = await Patient.delete(patientId)
 
       if (patientDeleted) {
         res.status(204).json(patientDeleted)

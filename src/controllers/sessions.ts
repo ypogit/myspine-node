@@ -18,7 +18,7 @@ import {
   generateResetToken,
   requestMail
 } from '../middleware'
-import { validatePayload } from '../utils/funcs/validation'
+import { containsMissingFields } from '../utils/funcs/validation'
 import { sanitizeEmail } from '../utils/funcs/strings'
 
 type LoginTokenResponse = {
@@ -31,11 +31,14 @@ export const sessions: Controller = {
     try {
       const { email, password } = req.body
 
-      validatePayload({
+      const missingFields = containsMissingFields({
         payload: req.body,
         requiredFields: ['email', 'password'],
-        res
       })
+
+      if (missingFields) {
+        BadRequestError(missingFields, res)
+      }
 
       const sanitizedEmail = sanitizeEmail(email)
       const user = await User.readByEmail(sanitizedEmail)
@@ -60,7 +63,7 @@ export const sessions: Controller = {
         res.status(201).json({
           ...user,
           ...tokens,
-          session_data: sessions 
+          session_data: sessions
         })
       }
     } catch (err: unknown) {
@@ -70,7 +73,7 @@ export const sessions: Controller = {
 
   logout: async(req, res) => {
     try {
-      const userId = parseInt(req.body.id)
+      const userId = parseInt(req.body.userId)
       await handleLogoutTokens(userId, res)
       
       req.session.destroy()
@@ -116,7 +119,7 @@ export const sessions: Controller = {
         mailType: 'reset_pass_requested',
         to: user!.email,
         from: undefined,
-        url: resetURL 
+        url: resetURL
       })
 
       res.status(201).json({ message: "Password reset successfully requested" })
@@ -129,11 +132,14 @@ export const sessions: Controller = {
     try {
       const { reset_password_token, user_id, password } = req.body
 
-      validatePayload({
+      const missingFields = containsMissingFields({
         payload: req.body,
         requiredFields: ['reset_password_token', 'user_id', 'password'],
-        res
       })
+
+      if (missingFields) {
+        BadRequestError(missingFields, res)
+      }
 
       const hashedPass: string | undefined = await argon2.hash(password)
   

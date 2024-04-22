@@ -31,7 +31,6 @@ describe("users controller", () => {
   describe("getUsers", () => {
     beforeEach(async() => {
       await truncateDb()
-      await terminateServer()
     })
 
     it("should GET all users", async() => {
@@ -81,7 +80,7 @@ describe("users controller", () => {
   describe("getUserById", () => {
     beforeEach(async() => {
       await truncateDb()
-      await terminateServer()
+      // await terminateServer()
     })
 
     it("should GET a user by id", async () => {
@@ -127,7 +126,7 @@ describe("users controller", () => {
     })
   
     it("should invoke InternalServerError on db query failure", async () => {
-      await User.create({
+      await User.create({di
         email: 'wwhite@msn.com', 
         password: 'ricin'
       })

@@ -1,10 +1,7 @@
-import { BadRequestError } from "./errors"
-
-export const validatePayload = ({ payload, requiredFields, res }: { 
+export const containsMissingFields = ({ payload, requiredFields }: { 
   payload: { [key: string]: any }, 
-  requiredFields: string[], 
-  res: any 
-}) => {
+  requiredFields: string[],
+}): string | undefined => {
   let missingFields: string[] = []
   
   for (const field of requiredFields) {
@@ -14,6 +11,8 @@ export const validatePayload = ({ payload, requiredFields, res }: {
   }
 
   if (missingFields.length > 0) {
-    BadRequestError(`${missingFields.join(", ")}`, res);
+    return missingFields.join(', ')
   }
+
+  return undefined
 }
