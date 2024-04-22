@@ -40,8 +40,7 @@ export const users: Controller = {
       let email: string | undefined = req.body?.email
       let password: string | undefined = req.body?.password
 
-      const sanitizedEmail = email && sanitizeEmail(email)
-      const existingUser = sanitizedEmail && await User.readByEmail(sanitizedEmail)
+      const existingUser = email && await User.readByEmail(email)
 
       if (existingUser) {
         res.redirect('/login')
@@ -65,7 +64,7 @@ export const users: Controller = {
       }
 
       if (email && hashedPass) {
-        const user = await User.create({ email: sanitizedEmail, password: hashedPass });
+        const user = await User.create({ email, password: hashedPass });
         res.status(201).json(user);
       }
     } catch (err: Error | unknown) {
@@ -88,7 +87,7 @@ export const users: Controller = {
       let payload: Partial<IUser> = {}
   
       if (email) {
-        payload.email = sanitizeEmail(email)
+        payload.email = email
       }
 
       if (password) {

@@ -28,13 +28,8 @@ describe("sessions controller", () => {
 
   describe("login", () => {
     const loginRoute = '/login'
-  
-    // beforeEach(async() => {
-    //   await truncateDb()
-    // })
 
     it("should login and return tokens", async() => {
-      await truncateDb()
       await User.create({
         email: 'wwhite@msn.com',
         password: 'ricin'
@@ -96,7 +91,7 @@ describe("sessions controller", () => {
     const loginRoute = '/login'
     const logoutRoute = '/logout'
   
-    beforeEach(async() => {
+    afterEach(async() => {
       await truncateDb()
       await terminateServer()
     })

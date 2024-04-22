@@ -8,7 +8,7 @@ import {
   UnauthorizedRequestError 
 } from '../utils/funcs/errors'
 import { v4 } from 'uuid'
-import { UserToken, IUser, IUserToken } from '../models'
+import { UserToken, IUserToken } from '../models'
 import { JwtPayload } from 'src/utils/types/generic'
 import argon2 from 'argon2'
 

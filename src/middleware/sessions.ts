@@ -3,7 +3,6 @@ import knexConfig from '../../knexfile'
 import session from 'express-session'
 import BetterSQLite3 from 'better-sqlite3'
 import BetterSQLite3SessionStore from 'better-sqlite3-session-store'
-import { NextFunction } from 'express'
 import { SessionData } from '../utils/types/express-session'
 
 type SessionStoreOptions = {

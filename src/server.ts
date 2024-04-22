@@ -16,7 +16,7 @@ import routes from './routes'
 
 export const app: Application = express()
 
-const port = process.env.PORT || 8443
+const port = process.env.PORT
 const credentials = {
   key: fs.readFileSync(process.env.PRIVATE_KEY_PATH 
     || './certs/local-key.pem', 'utf8'),

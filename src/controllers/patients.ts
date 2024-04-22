@@ -8,7 +8,6 @@ import { IPatient, Patient } from '../models'
 import { containsMissingFields } from '../utils/funcs/validation'
 import { sanitizeEmail } from '../utils/funcs/strings'
 // import { requestMail } from '../middleware'
-import { User } from '../models'
 
 export const patients: Controller = {
   getPatientById: async (req, res) => {
@@ -45,10 +44,9 @@ export const patients: Controller = {
       })
 
       if (missingFields) {
-        return 
+        return BadRequestError(missingFields, res) 
       }
 
-      const user = await User.readByEmail(email) || undefined
       const sanitizedEmail = sanitizeEmail(email)
       const patient = await Patient.create({ 
         user_id,
@@ -61,6 +59,7 @@ export const patients: Controller = {
         phone_number 
       })
 
+      // TODO: Find SMPT connection service provider
       // if (Patient) {
       //   requestMail({
       //     mailType: 'appointment_requested',
@@ -90,7 +89,7 @@ export const patients: Controller = {
       //   })
       // }
 
-      res.status(201).json(Patient)
+      res.status(201).json(patient)
     } catch (err: Error | unknown) {
       InternalServerError("create", "user", res)
     }
@@ -117,6 +116,10 @@ export const patients: Controller = {
       }
 
       let payload: Partial<IPatient> = {}
+
+      if (user_id) {
+        payload.user_id = user_id
+      }
 
       if (firstname) {
         payload.firstname = firstname

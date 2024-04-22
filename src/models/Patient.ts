@@ -1,7 +1,6 @@
 import knex from "knex"
 import knexConfig from "../../knexfile"
 import { capitalizeFirstLetter, sanitizeEmail } from "../utils/funcs/strings"
-import { containsMissingFields } from "../utils/funcs/validation"
 
 export interface IPatient {
   id: number,
@@ -26,9 +25,9 @@ export class Patient {
     return patient
   }
 
-  static async readById(id: number) {
+  static async readById(patientId: number) {
     return await db(PATIENTS_TABLE)
-      .where('id', '=', id)
+      .where('id', '=', patientId)
       .first<IPatient, Pick<IPatient, "id">>()
   }
 

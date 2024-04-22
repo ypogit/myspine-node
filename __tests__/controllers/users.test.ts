@@ -31,8 +31,9 @@ describe("users controller", () => {
   describe("getUsers", () => {
     beforeEach(async() => {
       await truncateDb()
+      await terminateServer()
     })
-
+  
     it("should GET all users", async() => {
       await User.create({
         email: 'wwhite@msn.com', 
@@ -80,9 +81,9 @@ describe("users controller", () => {
   describe("getUserById", () => {
     beforeEach(async() => {
       await truncateDb()
-      // await terminateServer()
+      await terminateServer()
     })
-
+  
     it("should GET a user by id", async () => {
       await User.create({
         email: 'wwhite@msn.com', 
@@ -126,7 +127,7 @@ describe("users controller", () => {
     })
   
     it("should invoke InternalServerError on db query failure", async () => {
-      await User.create({di
+      await User.create({
         email: 'wwhite@msn.com', 
         password: 'ricin'
       })
@@ -154,7 +155,7 @@ describe("users controller", () => {
       await truncateDb()
       await terminateServer()
     })
-
+  
     it("should POST a user", async () => {
       const payload = {
         email: 'mike@mafia.org',
