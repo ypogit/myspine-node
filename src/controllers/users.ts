@@ -7,8 +7,8 @@ import {
 } from '../utils/funcs/errors'
 import { Controller } from '../utils/types/generic'
 import { User, IUser } from '../models'
-import { sanitizeEmail } from '../utils/funcs/strings'
 import { containsMissingFields } from '../utils/funcs/validation'
+import { sanitizeEmail } from '../utils/funcs/strings'
 
 export const users: Controller = {
   getUsers: async (_req, res) => {
@@ -22,7 +22,7 @@ export const users: Controller = {
 
   getUserById: async (req, res) => {
     try {
-      const userId: number = parseInt(req.params.id)
+      const userId: number | undefined = parseInt(req.params?.id)
       const userById: IUser = await User.readById(userId)
 
       if (userById) {
@@ -40,14 +40,14 @@ export const users: Controller = {
       let email: string | undefined = req.body?.email
       let password: string | undefined = req.body?.password
 
-      const existingUser = email && await User.readByEmail(email)
+      const existingUser = email && await User.readByEmail(sanitizeEmail(email))
 
       if (existingUser) {
         res.redirect('/login')
       }
 
       const missingFields = containsMissingFields({ 
-        payload: { email, password }, 
+        payload: { email, password },     
         requiredFields: ['email', 'password']
       })
 
@@ -55,16 +55,14 @@ export const users: Controller = {
         BadRequestError(missingFields, res)
       }
       
-      const hashedPass: string | undefined = password
-        ? await argon2.hash(password)
-        : undefined;
+      const hashedPass: string | undefined = password && await argon2.hash(password)
   
       if (!hashedPass) {
         ExternalServerError("argon 2 hashing", res);
       }
 
       if (email && hashedPass) {
-        const user = await User.create({ email, password: hashedPass });
+        const user = await User.create({ email: sanitizeEmail(email), password: hashedPass });
         res.status(201).json(user);
       }
     } catch (err: Error | unknown) {
@@ -74,7 +72,7 @@ export const users: Controller = {
 
   putUser: async (req, res) => {
     try {
-      const userId: number = parseInt(req.params.id)
+      const userId: number | undefined = parseInt(req.params?.id)
       const userById: IUser = await User.readById(userId)
 
       let email: string | undefined = req.body?.email
@@ -87,7 +85,7 @@ export const users: Controller = {
       let payload: Partial<IUser> = {}
   
       if (email) {
-        payload.email = email
+        payload.email = sanitizeEmail(email)
       }
 
       if (password) {
@@ -97,7 +95,7 @@ export const users: Controller = {
         payload.password = hashedPass
       }
 
-      const updatedUser = await User.update(userId, payload);
+      const updatedUser = await User.update({ userId, payload });
 
       res.status(201).json(updatedUser)
     } catch (err: Error | unknown) {
@@ -107,8 +105,8 @@ export const users: Controller = {
 
   deleteUser: async (req, res) => {
     try {
-      const userId: number = parseInt(req.params.id)
-      const userDeleted: number  = await User.delete(userId)
+      const userId: number | undefined = parseInt(req.params?.id)
+      const userDeleted: number = await User.delete(userId)
 
       if (userDeleted) {
         res.status(204).json(userDeleted)

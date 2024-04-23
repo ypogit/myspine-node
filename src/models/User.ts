@@ -14,15 +14,6 @@ const db = knex(knexConfig)
 
 export class User {
   static async create({ email, password }: Partial<IUser>): Promise<IUser | null> {
-    
-    const existingUser = await db(USERS_TABLE)
-      .where({ email })
-      .first()
-
-    if (existingUser) {
-      throw new Error("Email already in use")
-    }
-
     const [user]: IUser[] = await db(USERS_TABLE)
       .insert<IUser>({ email, password }) // .insert binds parameters
       .returning('*')
@@ -36,7 +27,7 @@ export class User {
 
   static async readById(userId: number) {
     return await db(USERS_TABLE)
-      .where('id', '=', userId)
+      .where('id', '=', Number(userId))
       .first<IUser, Pick<IUser, "id">>()
   }
 
@@ -46,17 +37,7 @@ export class User {
       .first()
   }
 
-  static async update(userId: number, userData: Partial<IUser>) {
-    const payload: { [key:string]: string } = {}
-
-    if (userData.email) {
-      payload.email = userData.email
-    }
-
-    if  (userData.password) {
-      payload.password = userData.password
-    }
-
+  static async update({ userId, payload }: { userId: number, payload: Partial<IUser> }) {
     await db(USERS_TABLE)
       .where('id', '=', userId)
       .update<IUser>(payload) // .where() && .update() does not bind parameters

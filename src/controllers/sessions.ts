@@ -7,7 +7,7 @@ import {
   ExternalServerError
 } from '../utils/funcs/errors'
 import { Controller } from '../utils/types/generic'
-import { User, UserToken } from '../models'
+import { IUserToken, User, UserToken } from '../models'
 import { 
   handleLoginTokens, 
   handleLogoutTokens,
@@ -20,11 +20,6 @@ import {
 } from '../middleware'
 import { containsMissingFields } from '../utils/funcs/validation'
 import { sanitizeEmail } from '../utils/funcs/strings'
-
-type LoginTokenResponse = {
-  access_token?: string,
-  refresh_token?: string
-}
 
 export const sessions: Controller = {
   login: async(req, res) => { 
@@ -40,30 +35,26 @@ export const sessions: Controller = {
         BadRequestError(missingFields, res)
       }
 
-      const sanitizedEmail = sanitizeEmail(email)
-      const user = await User.readByEmail(sanitizedEmail)
+      const user = await User.readByEmail(sanitizeEmail(email))
       
       if (!user) {
         NotFoundError("user", res)
-        res.status(302).redirect('/login')
       }
       
-      const hashedPass = await argon2.hash(password)
+      const isMatched = await argon2.verify(user!.password, password)
 
-      if (!hashedPass) {
+      if (!isMatched) {
         UnauthorizedRequestError("password", res)
-        res.status(302).redirect('/password/forget')
       }
 
       const userId = user!.id
-      const tokens: LoginTokenResponse | null | undefined = await handleLoginTokens(userId, req, res)
+      const tokens: Partial<IUserToken> | undefined = await handleLoginTokens(userId, req, res)
       const sessions: SessionData | undefined = await handleSessionData(userId, req, res)
-      
+
       if (tokens && sessions) {
         res.status(201).json({
-          ...user,
-          ...tokens,
-          session_data: sessions
+          message: "Successfully logged in",
+          date: { ...user, ...tokens, sessions }
         })
       }
     } catch (err: unknown) {
@@ -73,7 +64,8 @@ export const sessions: Controller = {
 
   logout: async(req, res) => {
     try {
-      const userId = parseInt(req.body.userId)
+      const userId = parseInt(req.params?.userId)
+      
       await handleLogoutTokens(userId, res)
       
       req.session.destroy()
@@ -90,39 +82,50 @@ export const sessions: Controller = {
     const clientURL = process.env.CLIENT_URL
 
     try {
-      const sanitizedEmail = sanitizeEmail(email)
-      const user = await User.readByEmail(sanitizedEmail)
+      const user = await User.readByEmail(sanitizeEmail(email))
 
       if (!user) {
         BadRequestError("email", res)
       }
 
-      const userId = user!.id
+      const user_id = user!.id
       const {
         reset_password_token,
         reset_password_token_expiration_date
       } = await generateResetToken()
 
       if (!reset_password_token) {
-        throw new Error("Unable to generate reset token")
+        InternalServerError("create", "reset token", res)
       }
 
-      await UserToken.create({ 
-        user_id: userId, 
+      const userToken = await UserToken.updateResetToken({ 
+        user_id,
         reset_password_token,
         reset_password_token_expiration_date
       })
 
-      const resetURL = `${clientURL}/passwordReset?token=${reset_password_token}&userId=${userId}`
+      if (!userToken) {
+        InternalServerError("update", "reset token", res)
+      }
 
-      requestMail({
-        mailType: 'reset_pass_requested',
-        to: user!.email,
-        from: undefined,
-        url: resetURL
+      const resetURL = `${clientURL}/passwordReset?token=${reset_password_token}&userId=${user_id}`
+
+      // TODO: PUT BACK
+      // requestMail({
+      //   mailType: 'reset_pass_requested',
+      //   to: user!.email,
+      //   from: undefined,
+      //   url: resetURL
+      // })
+
+      res.status(201).json({ 
+        message: "Password reset successfully requested", 
+        data: {
+          user_id, 
+          reset_password_token,   
+          reset_password_token_expiration_date
+        }
       })
-
-      res.status(201).json({ message: "Password reset successfully requested" })
     } catch (err: Error | unknown) {
       InternalServerError("update", "password", res)
     }
@@ -130,49 +133,63 @@ export const sessions: Controller = {
 
   resetPassword: async(req, res) => {
     try {
-      const { reset_password_token, user_id, password } = req.body
+      const {
+        user_id, 
+        new_password,
+        reset_password_token,
+      } = req.body
 
       const missingFields = containsMissingFields({
         payload: req.body,
-        requiredFields: ['reset_password_token', 'user_id', 'password'],
+        requiredFields: ['user_id', 'new_password', 'reset_password_token'],
       })
 
       if (missingFields) {
         BadRequestError(missingFields, res)
       }
 
-      const hashedPass: string | undefined = await argon2.hash(password)
+      const hashedPass: string | undefined = await argon2.hash(new_password)
   
       if (!hashedPass) {
         ExternalServerError("argon 2 hashing", res)
       }
 
-      const userData = { password: hashedPass }
-      const user = await User.update(user_id, userData)
+      const userId = parseInt(user_id)
+      const userById = await User.readById(userId)
+      const userToken = await UserToken.readByUserId(userId)
 
-      if (!user) {
-        InternalServerError("update", "user", res)
+      if (!userById) {
+        NotFoundError("user", res)
       }
-
-      const userToken = await UserToken.readByUserId(user_id)
 
       if (!userToken) {
         NotFoundError("user token", res)
       }
 
-      const exp = userToken.reset_password_token_expiration_date
-      const isTokenUnexpired = exp && (exp > new Date(Date.now())
-)
-      if (reset_password_token === userToken.reset_password_token && isTokenUnexpired) {
-        await UserToken.updateResetToken({ userId: user_id, resetToken: undefined })
+      const payload = { password: hashedPass }
+      const user = await User.update({ userId, payload })
+
+      if (!user) {
+        InternalServerError("update", "password", res)
       }
 
-      requestMail({
-        mailType: 'reset_pass_completed',
-        to: user!.email,
-        from: undefined
-      })
-      
+      const exp = userToken.reset_password_token_expiration_date
+      const isTokenUnexpired = exp && (exp > new Date(Date.now()))
+      if (reset_password_token === userToken.reset_password_token && isTokenUnexpired) {
+        await UserToken.updateResetToken({ 
+          user_id,
+          reset_password_token: undefined,
+          reset_password_token_expiration_date: undefined
+        })
+      }
+
+      // TODO: PUT BACK
+      // requestMail({
+      //   mailType: 'reset_pass_completed',
+      //   to: user!.email,
+      //   from: undefined
+      // })
+
       res.status(200).json({ message: "Password reset successfully" })
     } catch (err: Error | unknown) {
       InternalServerError("update", "password", res)

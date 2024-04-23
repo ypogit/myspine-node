@@ -30,7 +30,6 @@ export const requestMail = async({ mailType, to, from, url, content }: {
   url?: string,
   content?: string
 }) => {
-
   const mailContent: MailContent = {
     reset_pass_requested: {
       from: `Peace of Mind Spine <${process.env.MAILER_EMAIL}>`,

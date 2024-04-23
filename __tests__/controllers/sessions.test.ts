@@ -8,7 +8,7 @@ import { generateToken } from '../../src/middleware'
 describe("sessions controller", () => {
   let db: Knex;
   let mockUserId: number = 696
-  let token: string = generateToken(mockUserId)
+  let token: string = generateToken({ userId: mockUserId })
 
   const truncateDb = async() => {
     db = knex(knexConfig)
@@ -26,10 +26,15 @@ describe("sessions controller", () => {
     })
   }
 
-  describe("login", () => {
+  describe.only("login", () => {    
     const loginRoute = '/login'
 
-    it("should login and return tokens", async() => {
+    beforeEach(async() => {
+      await truncateDb()
+      await terminateServer()
+    })
+
+    it.only("should login and return tokens", async() => {
       await User.create({
         email: 'wwhite@msn.com',
         password: 'ricin'
@@ -48,7 +53,7 @@ describe("sessions controller", () => {
       const users = await User.readAll()
       const { id, email, password } = users[1]
       const payload = { email, password }
-      const token = generateToken(id)
+      const token = generateToken({ userId: id })
     
       const res: any = await request(app)
         .post(loginRoute)
@@ -118,7 +123,7 @@ describe("sessions controller", () => {
       const oneDay = '1d'
 
       if (userId) {
-        const token = generateToken(userId, oneDay)
+        const token = generateToken({ userId, expiresIn: oneDay })
   
         // Login to generate access / refresh tokens 
         await request(app)

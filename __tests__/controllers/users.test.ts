@@ -9,7 +9,7 @@ import argon2 from 'argon2'
 describe("users controller", () => {
   let db: Knex;
   let mockUserId: number = 696
-  let token: string = generateToken(mockUserId)
+  let token: string = generateToken({ userId: mockUserId })
   let userRoute = '/users'
 
   const truncateDb = async() => {
@@ -244,12 +244,12 @@ describe("users controller", () => {
         email: 'mike@msn.com',
         password: 'palomita'
       }
-      const updatedUser = await User.update(userId, payload)
+      const updatedUser = await User.update({ userId, payload })
       const hash = await argon2.hash(payload.password)
 
       const res = await request(app)
         .put(`${userRoute}/${userId}/update`)        
-        .set('Authorization', `Bearer ${generateToken(userId)}`)
+        .set('Authorization', `Bearer ${generateToken({ userId })}`)
         .set('Content-Type', 'application/json')
         .accept('application/json')
         .send(payload)
@@ -314,7 +314,7 @@ describe("users controller", () => {
       const res = await request(app)
         .delete(`/users/${userId}/delete`)
         .set("Content-Type", "application/json")
-        .set("Authorization", `Bearer ${generateToken(userId)}`)
+        .set("Authorization", `Bearer ${generateToken({ userId })}`)
   
       expect(res.status).toEqual(204)
       expect(res.body).toEqual({});

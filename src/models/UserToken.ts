@@ -26,12 +26,10 @@ export class UserToken {
     const {
       user_id,
       access_token,
-      refresh_token,
-      reset_password_token
+      refresh_token
     } = tokenBody
 
     let tokens;
-
     if (access_token && refresh_token) {
       [tokens] = await db(USER_TOKENS_TABLE)
       .insert<IUserToken>({
@@ -41,15 +39,6 @@ export class UserToken {
         access_token_expires_at: new Date(Date.now() + (
           Number(process.env.ACCESS_TOKEN_EXPIRES_AT) || 15 * 60 * 1000
         ))
-      })
-      .returning('*')
-    }
-
-    if (reset_password_token) {
-      [tokens] = await db(USER_TOKENS_TABLE)
-      .insert<IUserToken>({
-        user_id ,
-        reset_password_token
       })
       .returning('*')
     }
@@ -69,21 +58,28 @@ export class UserToken {
       .first<IUserToken, Pick<IUserToken, "user_id">>()
   }
 
-  static async updateResetToken({ userId, resetToken }: { userId: number, resetToken?: string }): Promise<IUserToken> {
+  static async updateResetToken({ user_id, reset_password_token, reset_password_token_expiration_date }: { 
+    user_id: number,
+    reset_password_token?: string,
+    reset_password_token_expiration_date?: Date, 
+  }): Promise<IUserToken> {
     await db(USER_TOKENS_TABLE)
-      .where('user_id', '=', userId)
+      .where('user_id', '=', user_id)
       .update<Partial<IUserToken>>({
-        reset_password_token: resetToken
+        access_token: undefined,
+        refresh_token: undefined,
+        reset_password_token,
+        reset_password_token_expiration_date
       })
 
-    const updatedUserToken = await UserToken.readByUserId(userId)
+    const updatedUserToken = await UserToken.readByUserId(user_id)
     return updatedUserToken
   }
 
   static async delete(userId: number) {
     return await db(USER_TOKENS_TABLE)
       .where('user_id', '=', userId)
-      .first<IUserToken, Pick<IUserToken, 'id'>>()
+      .first<IUserToken, Pick<IUserToken, 'user_id'>>()
       .delete()
   }
 }

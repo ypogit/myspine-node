@@ -1,6 +1,5 @@
 import knex from "knex"
 import knexConfig from "../../knexfile"
-import { capitalizeFirstLetter, sanitizeEmail } from "../utils/funcs/strings"
 
 export interface IPatient {
   id: number,
@@ -31,37 +30,7 @@ export class Patient {
       .first<IPatient, Pick<IPatient, "id">>()
   }
 
-  static async update(patientId: number, patientData: Partial<IPatient>) {
-    const payload: Partial<IPatient> = {}
-
-    if (patientData.firstname) {
-      payload.firstname = capitalizeFirstLetter(patientData.firstname)
-    }
-
-    if (patientData.lastname) {
-      payload.lastname = capitalizeFirstLetter(patientData.lastname)
-    }
-
-    if (patientData.pain_description) {
-      payload.pain_description = patientData.pain_description
-    }
-
-    if (patientData.pain_degree) {
-      payload.pain_degree = patientData.pain_degree
-    }
-
-    if (patientData.address) {
-      payload.address = patientData.address
-    }
-
-    if (patientData.email) {
-      payload.email = sanitizeEmail(patientData.email)
-    }
-
-    if (patientData.phone_number) {
-      payload.phone_number = patientData.phone_number
-    }
-
+  static async update({ patientId, payload }: { patientId: number, payload: Partial<IPatient> }) {
     await db(PATIENTS_TABLE)
       .where('id', '=', patientId)
       .update<IPatient>(payload)

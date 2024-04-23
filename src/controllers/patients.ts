@@ -6,7 +6,10 @@ import {
 import { Controller } from '../utils/types/generic'
 import { IPatient, Patient } from '../models'
 import { containsMissingFields } from '../utils/funcs/validation'
-import { sanitizeEmail } from '../utils/funcs/strings'
+import { 
+  capitalizeFirstLetter, 
+  sanitizeEmail 
+} from '../utils/funcs/strings'
 // import { requestMail } from '../middleware'
 
 export const patients: Controller = {
@@ -38,7 +41,7 @@ export const patients: Controller = {
         phone_number
       } = req.body
 
-      const missingFields = containsMissingFields({ 
+      const missingFields = containsMissingFields({
         payload: req.body,
         requiredFields: ['firstname', 'lastname', 'pain_description', 'pain_degree', 'email', 'phone_number']
       })
@@ -47,19 +50,18 @@ export const patients: Controller = {
         return BadRequestError(missingFields, res) 
       }
 
-      const sanitizedEmail = sanitizeEmail(email)
       const patient = await Patient.create({ 
         user_id,
-        firstname,
-        lastname, 
-        pain_description, 
+        firstname: capitalizeFirstLetter(firstname),
+        lastname: capitalizeFirstLetter(lastname), 
+        pain_description: capitalizeFirstLetter(pain_description), 
         pain_degree, 
         address, 
-        email: sanitizedEmail, 
+        email: sanitizeEmail(email), 
         phone_number 
       })
 
-      // TODO: Find SMPT connection service provider
+      // TODO: PUT BACK. Find SMPT connection service provider
       // if (Patient) {
       //   requestMail({
       //     mailType: 'appointment_requested',
@@ -77,12 +79,12 @@ export const patients: Controller = {
       //       <p>
       //         <span class="bold-text">Greetings,</span> Doctor!<br><br>
       //         The following patient has requested an appointment with you.<br><br>
-      //         <span class="bold-text">Name:</span> ${firstname} ${lastname}<br>
-      //         <span class="bold-text">Pain description:</span> ${pain_description}<br>
-      //         <span class="bold-text">Pain degree:</span> ${pain_degree}<br>
-      //         <span class="bold-text">Address:</span> ${address || 'N/A'}<br>
-      //         <span class="bold-text">Email:</span> ${email}<br>
-      //         <span class="bold-text">Phone number:</span> ${phone_number}<br>
+      //         <span class="bold-text">Name:</span> ${patient.firstname} ${patient.lastname}<br>
+      //         <span class="bold-text">Pain description:</span> ${patient.pain_description}<br>
+      //         <span class="bold-text">Pain degree:</span> ${patient.pain_degree}<br>
+      //         <span class="bold-text">Address:</span> ${patient.address || 'N/A'}<br>
+      //         <span class="bold-text">Email:</span> ${patient.email}<br>
+      //         <span class="bold-text">Phone number:</span> ${patient.phone_number}<br>
       //       </p>
       //     </body>
       //     </html>` 
@@ -97,7 +99,7 @@ export const patients: Controller = {
 
   putPatient: async (req, res) => {
     try {
-      const patientId = req.params.id
+      const patientId = parseInt(req.params.id)
       let {
         user_id,
         firstname,
@@ -154,7 +156,7 @@ export const patients: Controller = {
         missingFields && BadRequestError(missingFields, res)
       }
 
-      const updatedPatient = await Patient.update(patientId, payload)
+      const updatedPatient = await Patient.update({ patientId, payload })
       res.status(201).json(updatedPatient)
     } catch (err: Error | unknown) {
       InternalServerError("update", "user", res)

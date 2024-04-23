@@ -58,6 +58,7 @@ export const handleSessionData = async(userId: number, req: any, _res: any) => {
   if (sessionData) {
     sessionData.logged_in = true;
     sessionData.user_id = userId;
+    // await SQLiteStore.destroy(sessionData.id);
   }
 
   return sessionData;

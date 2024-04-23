@@ -1,19 +1,15 @@
 import crypto from 'crypto'
 import fs from 'fs'
 import jwt, { SignOptions } from 'jsonwebtoken'
-import knex from 'knex'
-import knexConfig from '../../knexfile'
 import { 
   InternalServerError, 
+  NotFoundError, 
   UnauthorizedRequestError 
 } from '../utils/funcs/errors'
 import { v4 } from 'uuid'
 import { UserToken, IUserToken } from '../models'
 import { JwtPayload } from 'src/utils/types/generic'
 import argon2 from 'argon2'
-
-const db = knex(knexConfig)
-const USER_TOKENS_TABLE: string = 'user_tokens'
 
 export const privateKey = crypto.createPrivateKey({
   key: fs.readFileSync(process.env.PRIVATE_KEY_PATH 
@@ -27,7 +23,7 @@ const publicKey = crypto.createPublicKey({
   format: 'pem'
 })
 
-export const generateToken = (userId: number, expiresIn?: string | number) => {
+export const generateToken = ({ userId, expiresIn }: { userId: number, expiresIn?: string }) => {
   const payload =  { id: v4(), userId }
   const options: SignOptions = { 
     algorithm: 'RS256', 
@@ -80,24 +76,18 @@ export const requireJwt = async(req: any, res: any, next: any) => {
   }
 }
 
-export const handleLoginTokens = async(userId: number, _req: any, res: any): Promise<Partial<IUserToken> | null | undefined> => {
-  const expiresIn = res.body?.expiresIn
-  const accessToken = generateToken(
-    userId, 
-    expiresIn || '15m'
-  ) 
-  const refreshToken = generateToken(userId) // Stay logged-in
+export const handleLoginTokens = async(userId: number, _req: any, res: any): Promise<Partial<IUserToken> | undefined> => {
+  const accessToken = generateToken({ userId, expiresIn: '15m' }) 
+  const refreshToken = generateToken({ userId, expiresIn: '1d' }) // Stay logged-in
   
   try {
-    const existingTokens = await db(USER_TOKENS_TABLE)
-      .where('user_id', '=', userId)
-      .first<UserToken>()
+    const existingTokens = await UserToken.readByUserId(userId)
 
     if (existingTokens && existingTokens.access_token_expires_at > new Date(Date.now())) {
       // Skip insertion if user already has valid tokens
       return { 
-        access_token: accessToken, 
-        refresh_token: refreshToken 
+        access_token: existingTokens.access_token, 
+        refresh_token: existingTokens.refresh_token 
       }
     }
 
@@ -107,13 +97,17 @@ export const handleLoginTokens = async(userId: number, _req: any, res: any): Pro
       refresh_token: refreshToken
     })
 
+    if (!tokens) {
+      return undefined;
+    }
+
     return { 
       access_token: tokens?.access_token, 
       refresh_token: tokens?.refresh_token 
     }
   } catch (err) {
     InternalServerError("login", "user", res)
-    return null
+    return undefined
   }
 }
 
