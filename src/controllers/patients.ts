@@ -24,7 +24,7 @@ export const patients: Controller = {
 
       res.status(200).json(patient)
     } catch (err: unknown) {
-      InternalServerError("get", "user", res)
+      InternalServerError("get", "user", res, err)
     }
   },
 
@@ -93,7 +93,7 @@ export const patients: Controller = {
 
       res.status(201).json(patient)
     } catch (err: Error | unknown) {
-      InternalServerError("create", "user", res)
+      InternalServerError("create", "user", res, err)
     }
   },
 
@@ -159,7 +159,7 @@ export const patients: Controller = {
       const updatedPatient = await Patient.update({ patientId, payload })
       res.status(201).json(updatedPatient)
     } catch (err: Error | unknown) {
-      InternalServerError("update", "user", res)
+      InternalServerError("update", "user", res, err)
     }
   },
 
@@ -174,7 +174,7 @@ export const patients: Controller = {
         NotFoundError(`Patient ID: ${patientId}`, res)
       }
     } catch (err: unknown) {
-      InternalServerError("delete", "patient", res)
+      InternalServerError("delete", "patient", res, err)
     }
   }
 }

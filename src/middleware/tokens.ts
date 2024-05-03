@@ -71,7 +71,7 @@ export const requireJwt = async(req: any, res: any, next: any) => {
     req.user = decoded
     next()
   } catch(err) {
-    UnauthorizedRequestError('token', res)
+    UnauthorizedRequestError('token', res, err)
   }
 }
 
@@ -105,7 +105,7 @@ export const handleLoginTokens = async(userId: number, _req: any, res: any): Pro
       refresh_token: tokens?.refresh_token 
     }
   } catch (err) {
-    InternalServerError("login", "user", res)
+    InternalServerError("login", "user", res, err)
     return undefined
   }
 }
@@ -121,6 +121,6 @@ export const handleLogoutTokens = async(userId: number, res: any) => {
       res.status(204).end()
     }
   } catch (err) {
-    InternalServerError("logout", "user", res)
+    InternalServerError("logout", "user", res, err)
   }
 }

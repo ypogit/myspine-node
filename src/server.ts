@@ -6,7 +6,9 @@ import https from 'https'
 import knex from "knex"
 import knexConfig from "../knexfile"
 import rateLimit from 'express-rate-limit'
+import routes from './routes'
 import session from 'express-session'
+import shutdown from 'http-graceful-shutdown'
 import { 
   corsOptions,
   helmetOptions, 
@@ -14,7 +16,6 @@ import {
   sessionOptions,
   requireJwt
 } from './middleware'
-import routes from './routes'
 
 export const app: Application = express()
 
@@ -48,28 +49,27 @@ app.use("/", (
 export const server = https.createServer(credentials, app);
 
 const teardown = async() => {
+  const tables = ['users', 'user_tokens', 'patients']
   try {
-    console.log('Starting teardown');
-    const tables = await db.raw('PRAGMA table_info(sqlite_master)');
-    const tableNames = (tables.rows || [])
-      .filter((row: any) => row.type === 'table')
-      .map((row: any) => row.name);
-    await Promise.all(tableNames.map((tableName: string) => db(tableName).truncate()));
-    console.log('Tables truncated');
-    await db.destroy();
-    console.log('Database connection closed');
+    console.log('Starting teardown')
+    if (env === dev_env) {
+      for (const table of tables) {
+        await db(table).truncate()
+      }
+    }
+    await db.destroy()
+    console.log('Database connection closed')
   } catch (err) {
-    console.error('Error tearing down:', err);
+    console.error('Error tearing down database connection:', err)
   }
 }
 
-process.on('SIGINT', async() => {
-  if (env === dev_env) {
-    await teardown()
-  }
-  process.exit(0)
-})
-
 server.listen(port, () => {
   console.log(`Listening on: https://localhost:${port}!`)
+})
+
+shutdown(server, {
+  signals: 'SIGINT SIGTERM',
+  timeout: 10000,
+  onShutdown: teardown,
 })

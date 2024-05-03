@@ -58,7 +58,7 @@ export const sessions: Controller = {
         })
       }
     } catch (err: unknown) {
-      InternalServerError("login", "user account", res)
+      InternalServerError("login", "user account", res, err)
     }
   },
 
@@ -73,7 +73,7 @@ export const sessions: Controller = {
       res.send("Successfully logging out")
       res.redirect('/login')
     } catch (err: Error | unknown) {
-      InternalServerError("logout", "user", res)
+      InternalServerError("logout", "user", res, err)
     }
   },
 
@@ -127,7 +127,7 @@ export const sessions: Controller = {
         }
       })
     } catch (err: Error | unknown) {
-      InternalServerError("update", "password", res)
+      InternalServerError("update", "password", res, err)
     }
   },
 
@@ -192,7 +192,7 @@ export const sessions: Controller = {
 
       res.status(200).json({ message: "Password reset successfully" })
     } catch (err: Error | unknown) {
-      InternalServerError("update", "password", res)
+      InternalServerError("update", "password", res, err)
     }
   }
 }
