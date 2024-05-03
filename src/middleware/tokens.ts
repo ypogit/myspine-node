@@ -2,8 +2,7 @@ import crypto from 'crypto'
 import fs from 'fs'
 import jwt, { SignOptions } from 'jsonwebtoken'
 import { 
-  InternalServerError, 
-  NotFoundError, 
+  InternalServerError,
   UnauthorizedRequestError 
 } from '../utils/funcs/errors'
 import { v4 } from 'uuid'

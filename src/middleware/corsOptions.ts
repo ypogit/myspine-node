@@ -3,10 +3,11 @@ import 'dotenv/config'
 
 type OriginCallback = (err: Error | null, origin?: boolean) => void
 
-const port = process.env.PORT || 8443
+const port = process.env.PORT
 
 const allowedOrigins: Array<string> = [
-  `https://localhost:${port}`
+  `https://localhost:${port}`,
+  `https://localhost:3000`
   // TODO: additional production origin
 ]
 
