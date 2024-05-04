@@ -10,7 +10,7 @@ import {
   capitalizeFirstLetter, 
   sanitizeEmail 
 } from '../utils/funcs/strings'
-// import { requestMail } from '../middleware'
+import { requestMail } from '../middleware'
 
 export const patients: Controller = {
   getPatientById: async (req, res) => {
@@ -50,6 +50,8 @@ export const patients: Controller = {
         return BadRequestError(missingFields, res) 
       }
 
+      const sanitizedEmail = sanitizeEmail(email)
+
       const patient = await Patient.create({ 
         user_id,
         firstname: capitalizeFirstLetter(firstname),
@@ -57,39 +59,38 @@ export const patients: Controller = {
         pain_description: capitalizeFirstLetter(pain_description), 
         pain_degree, 
         address, 
-        email: sanitizeEmail(email), 
+        email: sanitizedEmail, 
         phone_number 
       })
 
-      // TODO: PUT BACK. Find SMPT connection service provider
-      // if (Patient) {
-      //   requestMail({
-      //     mailType: 'appointment_requested',
-      //     from: sanitizedEmail,
-      //     content: `<!DOCTYPE html>
-      //     <html>
-      //     <head>
-      //       <style>
-      //         .bold-text {
-      //           font-weight: bold;
-      //         }
-      //       </style>
-      //     </head>
-      //     <body>
-      //       <p>
-      //         <span class="bold-text">Greetings,</span> Doctor!<br><br>
-      //         The following patient has requested an appointment with you.<br><br>
-      //         <span class="bold-text">Name:</span> ${patient.firstname} ${patient.lastname}<br>
-      //         <span class="bold-text">Pain description:</span> ${patient.pain_description}<br>
-      //         <span class="bold-text">Pain degree:</span> ${patient.pain_degree}<br>
-      //         <span class="bold-text">Address:</span> ${patient.address || 'N/A'}<br>
-      //         <span class="bold-text">Email:</span> ${patient.email}<br>
-      //         <span class="bold-text">Phone number:</span> ${patient.phone_number}<br>
-      //       </p>
-      //     </body>
-      //     </html>` 
-      //   })
-      // }
+      if (Patient) {
+        await requestMail({
+          mailType: 'appointment_requested',
+          from: sanitizedEmail,
+          content: `<!DOCTYPE html>
+          <html>
+          <head>
+            <style>
+              .bold-text {
+                font-weight: bold;
+              }
+            </style>
+          </head>
+          <body>
+            <p>
+              <span class="bold-text">Greetings,</span> Doctor!<br><br>
+              The following patient has requested an appointment with you.<br><br>
+              <span class="bold-text">Name:</span> ${patient.firstname} ${patient.lastname}<br>
+              <span class="bold-text">Pain description:</span> ${patient.pain_description}<br>
+              <span class="bold-text">Pain degree:</span> ${patient.pain_degree}<br>
+              <span class="bold-text">Address:</span> ${patient.address || 'N/A'}<br>
+              <span class="bold-text">Email:</span> ${patient.email}<br>
+              <span class="bold-text">Phone number:</span> ${patient.phone_number}<br>
+            </p>
+          </body>
+          </html>` 
+        }).catch(console.error)
+      }
 
       res.status(201).json(patient)
     } catch (err: Error | unknown) {
