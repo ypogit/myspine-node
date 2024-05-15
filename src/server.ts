@@ -45,7 +45,6 @@ routes.forEach(({ path, router }) => {
 app.use("/", (
   rateLimit(limiterOptions),
   requireJwt,
-  // cors(corsOptions),
   helmet(helmetOptions)
 ))
 
