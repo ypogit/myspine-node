@@ -1,8 +1,9 @@
 import cors from 'cors'
 import express, { Application } from 'express'
-import fs from 'fs'
+// import fs from 'fs'
 import helmet from 'helmet'
-import https from 'https'
+// import https from 'https'
+import http from 'http'
 import knex from "knex"
 import knexConfig from "../knexfile"
 import rateLimit from 'express-rate-limit'
@@ -19,18 +20,20 @@ import {
 
 export const app: Application = express()
 
-const credentials = {
-  key: fs.readFileSync(process.env.PRIVATE_KEY_PATH 
-    || './certs/local-key.pem', 'utf8'),
-  cert: fs.readFileSync(process.env.CERTIFICATE_PATH 
-    || './certs/local-cert.pem', 'utf8')
-}
+// const credentials = {
+//   key: fs.readFileSync(process.env.PRIVATE_KEY_PATH 
+//     || './certs/local-key.pem', 'utf8'),
+//   cert: fs.readFileSync(process.env.CERTIFICATE_PATH 
+//     || './certs/local-cert.pem', 'utf8')
+// }
+
 const db = knex(knexConfig)
 const dev_env = 'development'
 const env = process.env.NODE_ENV
 const port = process.env.PORT
 
 app.use(express.json())
+app.use(cors(corsOptions))
 app.use("/login", (
   session(sessionOptions)
 ))
@@ -42,11 +45,12 @@ routes.forEach(({ path, router }) => {
 app.use("/", (
   rateLimit(limiterOptions),
   requireJwt,
-  cors(corsOptions),
+  // cors(corsOptions),
   helmet(helmetOptions)
 ))
 
-export const server = https.createServer(credentials, app);
+// export const server = https.createServer(credentials, app);
+export const server = http.createServer(app)
 
 const teardown = async() => {
   const tables = ['users', 'user_tokens', 'patients']
@@ -65,7 +69,7 @@ const teardown = async() => {
 }
 
 server.listen(port, () => {
-  console.log(`Listening on: https://localhost:${port}!`)
+  console.log(`Listening on: http://localhost:${port}!`)
 })
 
 shutdown(server, {
