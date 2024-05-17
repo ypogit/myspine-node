@@ -7,11 +7,17 @@ import {
   ExternalServerError
 } from '../utils/funcs/errors'
 import { Controller } from '../utils/types/generic'
-import { IUserToken, User, UserToken } from '../models'
+import { 
+  IUserToken, 
+  Patient, 
+  User, 
+  UserToken
+} from '../models'
 import { 
   handleLoginTokens, 
   handleLogoutTokens,
-  handleSessionData
+  handleSessionData,
+  MailTypes
 } from '../middleware'
 import { SessionData } from 'src/utils/types/express-session'
 import { 
@@ -83,6 +89,7 @@ export const sessions: Controller = {
 
     try {
       const user = await User.readByEmail(sanitizeEmail(email))
+      const patient = user && await Patient.readByUserId(user.id)
 
       if (!user) {
         BadRequestError("email", res)
@@ -110,13 +117,18 @@ export const sessions: Controller = {
 
       const resetURL = `${clientURL}/passwordReset?token=${reset_password_token}&userId=${user_id}`
 
-      // TODO: PUT BACK
-      // requestMail({
-      //   mailType: 'reset_pass_requested',
-      //   to: user!.email,
-      //   from: undefined,
-      //   url: resetURL
-      // })
+      const patientName = `${patient?.firstname} ${patient?.lastname}`
+
+      requestMail({
+        mailType: MailTypes.RESET_PASS_REQUESTED,
+        to: { 
+          email: user!.email,
+          name: patientName,
+          id: user!.id
+        },
+        html: `<p>Dear ${patientName},<br/><br/>
+        You have requested a password reset for <a href="https://peaceofmindspine.com">peaceofmindspine.com</a> account. Please click on the following link <a href=${resetURL}>${resetURL}</a> to reset your password.</p>`
+      })
 
       res.status(201).json({ 
         message: "Password reset successfully requested", 
@@ -168,6 +180,7 @@ export const sessions: Controller = {
 
       const payload = { password: hashedPass }
       const user = await User.update({ userId, payload })
+      const patient = user && await Patient.readByUserId(userId)
 
       if (!user) {
         InternalServerError("update", "password", res)
@@ -175,6 +188,7 @@ export const sessions: Controller = {
 
       const exp = userToken.reset_password_token_expiration_date
       const isTokenUnexpired = exp && (exp > new Date(Date.now()))
+      
       if (reset_password_token === userToken.reset_password_token && isTokenUnexpired) {
         await UserToken.updateResetToken({ 
           user_id,
@@ -183,12 +197,14 @@ export const sessions: Controller = {
         })
       }
 
-      // TODO: PUT BACK
-      // requestMail({
-      //   mailType: 'reset_pass_completed',
-      //   to: user!.email,
-      //   from: undefined
-      // })
+      requestMail({
+        mailType: MailTypes.RESET_PASS_COMPLETED,
+        to: { 
+          email: user!.email, 
+          name: `${patient?.firstname} ${patient?.lastname}`,
+          id: user.id
+        }
+      })
 
       res.status(200).json({ message: "Password reset successfully" })
     } catch (err: Error | unknown) {

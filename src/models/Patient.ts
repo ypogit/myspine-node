@@ -30,6 +30,12 @@ export class Patient {
       .first<IPatient, Pick<IPatient, "id">>()
   }
 
+  static async readByUserId(userId: number) {
+    return await db(PATIENTS_TABLE)
+      .where('user_id', '=', userId)
+      .first<IPatient, Pick<IPatient, "user_id">>()
+  }
+
   static async update({ patientId, payload }: { patientId: number, payload: Partial<IPatient> }) {
     await db(PATIENTS_TABLE)
       .where('id', '=', patientId)
