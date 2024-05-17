@@ -1,67 +1,105 @@
-import nodemailer from 'nodemailer'
+import nodemailer from 'nodemailer';
 
-type MailOptions = {
-  mailType: string,
-  from: string,
-  to: string,
-  subject: string,
-  text: string
-  url?: string,
-  html?: string,
-  content?: string
+interface Mailer {
+  email: string;
+  name?: string;
+  id?: number;
 }
 
-type MailContent = {
-  [key: string]: Partial<MailOptions>
+interface MailOptions {
+  mailType: string;
+  from: Mailer;
+  to: Mailer;
+  subject: string;
+  html: string;
 }
+
+type MailTemplates = {
+  [key: string]: Partial<MailOptions>;
+};
+
+export enum MailTypes {
+  RESET_PASS_REQUESTED = 'reset_pass_requested',
+  RESET_PASS_COMPLETED = 'reset_pass_completed',
+  APPT_REQUESTED = 'appointment_requested',
+}
+
+type MailType = MailTypes.RESET_PASS_REQUESTED | MailTypes.RESET_PASS_COMPLETED | MailTypes.APPT_REQUESTED;
+
+const SMTP_EMAIL = process.env.SMTP_EMAIL;
+const SMTP_PASS = process.env.SMTP_PASS;
+const SMTP_PORT = parseInt(process.env.SMTP_PORT!);
+const SMTP_SERVICE = process.env.SMTP_SERVICE;
 
 const transporter = nodemailer.createTransport({
-  service: 'smtp-relay.brevo.com',
-  port: 587,
-  secure: false, // True for 465, false for others
+  host: SMTP_SERVICE,
+  port: SMTP_PORT,
   auth: {
-    user: process.env.MAILER_EMAIL,
-    pass: process.env.MAILER_PASSWORD
-  }
-})
+    user: SMTP_EMAIL,
+    pass: SMTP_PASS,
+  },
+});
 
-export const requestMail = async({ mailType, to, from, url, content }: {
-  mailType: 'reset_pass_requested' | 'reset_pass_completed' | 'appointment_requested',
-  to?: string,
-  from?: string,
-  url?: string,
-  content?: string
+const mailTemplates: MailTemplates = {
+  reset_pass_requested: {
+    // from: `"Peace of Mind Spine.com" <${SMTP_EMAIL}>`,
+    from: { email: SMTP_EMAIL! },
+    subject: "Password reset",
+  },
+  reset_pass_completed: {
+    // from: `"Peace of Mind Spine.com" <${SMTP_EMAIL}>`,
+    from: { email: SMTP_EMAIL! },
+    subject: "Successfully reset password",
+    html: `<p>Done! You have successfully reset your password for <a href="https://peaceofmindspine.com">peaceofmindspine.com</a></p>`
+  },
+  appointment_requested: {
+    to: { email: SMTP_EMAIL! },
+    subject: "Request for Appointment"
+  },
+};
+
+export const getMailConfigs = (
+  mailType: MailType,
+  from?: Mailer,
+  to?: Mailer,
+  html?: string
+) => {
+  const template = mailTemplates[mailType];
+
+  if (!template) {
+    throw new Error(`Unknown mail type: ${mailType}`);
+  }
+
+  return {
+    from: template?.from?.email || from?.email,
+    to: template?.to?.email || to?.email,
+    subject: template.subject,
+    html: html || template.html
+  }
+};
+
+export const requestMail = async ({
+  mailType,
+  from,
+  to,
+  html,
+}: {
+  mailType: MailType;
+  from?: Mailer;
+  to?: Mailer;
+  url?: string;
+  html?: string;
 }) => {
-  const mailContent: MailContent = {
-    reset_pass_requested: {
-      from: `Peace of Mind Spine <${process.env.MAILER_EMAIL}>`,
-      to,
-      subject: "Password reset",
-      // html: `You have requested a password reset for <a href="https://peaceofmindspine.com"}>peaceofmindspine.com</a> <p>Please click on the following link <a href=${url}>${url}</a> to reset your password.</p>`,
-    },
-    reset_pass_completed: {
-      from: `Peace of Mind Spine <${process.env.MAILER_EMAIL}>`,
-      to,
-      subject: "Successfully reset password",
-      // html: `<p>Done! You have successfully reset your password for <a href="https://peaceofmindspine.com"}>peaceofmindspine.com</a></p>`
-    },
-    appointment_requested: {
-      from,
-      to: process.env.MAILER_EMAIL,
-      subject: "Request for Appointment",
-      text: 'Appointment requested'
-      // html: `<!DOCTYPE html>
-      //   <html lang="en">
-      //     <head>
-      //       <meta charset="UTF-8">
-      //       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      //       <title>Email Title</title>
-      //     </head>
-      //     <body>${content}</body>
-      //   </html>`
-    }
-  }
+  try {
+    const mailConfigs = getMailConfigs(mailType, from, to, html);
+    const info = await transporter.sendMail(mailConfigs);
+    console.log('Email sent:', info.response);
 
-  const info = await transporter.sendMail(mailContent[mailType])
-  console.log("Message sent: %s", info.messageId);
-}
+    return info;
+
+  } catch (err) {
+    console.error('Email error:', err);
+    
+    throw new Error('Unable to mail an appointment request at this time. Please try again later');
+  } 
+};

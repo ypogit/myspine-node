@@ -10,7 +10,7 @@ import {
   capitalizeFirstLetter, 
   sanitizeEmail 
 } from '../utils/funcs/strings'
-import { requestMail } from '../middleware'
+import { MailTypes, requestMail } from '../middleware'
 
 export const patients: Controller = {
   getPatientById: async (req, res) => {
@@ -55,41 +55,31 @@ export const patients: Controller = {
       const patient = await Patient.create({ 
         user_id,
         firstname: capitalizeFirstLetter(firstname),
-        lastname: capitalizeFirstLetter(lastname), 
-        pain_description: capitalizeFirstLetter(pain_description), 
-        pain_degree, 
-        address, 
-        email: sanitizedEmail, 
-        phone_number 
+        lastname: capitalizeFirstLetter(lastname),
+        pain_description: pain_description,
+        pain_degree,
+        address,
+        email: sanitizedEmail,
+        phone_number
       })
 
       if (Patient) {
-        await requestMail({
-          mailType: 'appointment_requested',
-          from: sanitizedEmail,
-          content: `<!DOCTYPE html>
-          <html>
-          <head>
-            <style>
-              .bold-text {
-                font-weight: bold;
-              }
-            </style>
-          </head>
-          <body>
-            <p>
-              <span class="bold-text">Greetings,</span> Doctor!<br><br>
-              The following patient has requested an appointment with you.<br><br>
-              <span class="bold-text">Name:</span> ${patient.firstname} ${patient.lastname}<br>
-              <span class="bold-text">Pain description:</span> ${patient.pain_description}<br>
-              <span class="bold-text">Pain degree:</span> ${patient.pain_degree}<br>
-              <span class="bold-text">Address:</span> ${patient.address || 'N/A'}<br>
-              <span class="bold-text">Email:</span> ${patient.email}<br>
-              <span class="bold-text">Phone number:</span> ${patient.phone_number}<br>
-            </p>
-          </body>
-          </html>` 
-        }).catch(console.error)
+        requestMail({
+          mailType: MailTypes.APPT_REQUESTED,
+          from: {
+            email: patient.email,
+            name: `${patient.firstname} ${patient.lastname}`,
+            id: patient.id
+          },
+          html: `<p>Greetings, doc!<br/><br/>
+          A patient has requested an appointment with you.<br/><br/>
+          <b>Name: </b>${patient.firstname} ${patient.lastname}<br/>
+          <b>Pain description: </b>${patient.pain_description}<br/>
+          <b>Pain degree: </b>${patient.pain_degree}<br/>
+          <b>Address: </b>${patient.address || 'N/A'}<br/>
+          <b>Email: </b>${patient.email}<br/>
+          <b>Phone number: </b>${patient.phone_number}<br/></p>` 
+        })
       }
 
       res.status(201).json(patient)
