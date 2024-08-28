@@ -10,11 +10,11 @@ The application is currently going through a few additional features- such as se
 
 ## Scripts
 
-### - Initial Configuration
+### Initial Configuration
 
   Run scripts `yarn && yarn build`
 
-### - Development Phase
+### Development Phase
 
   #### Run `yarn build` when
   - Changes or see changes in tsconfig.json / webpack.config.js
@@ -29,7 +29,7 @@ The application is currently going through a few additional features- such as se
   #### Run `yarn cache clean` when 
   - Whenever you want to clear local packages cache
 
-## Framework & Language**
+# Frameworks
 1. **Express.js** : Flexible and performant web API framework
 2. **TypeScript** : Static+dynamic typed language, compiled to JavaScript
 3. **Jest**       : Straightforward JavaScript test framework
