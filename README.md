@@ -8,6 +8,11 @@ Written in Typescript Node as a backend with lightweight SQLite database and Kne
 
 The application is currently going through a few additional features- such as secret management with Docker container, and adding a certificate for the secure protocol and third-party OAuth integration.
 
+## Requirements
+  
+  This application is the backend portion.
+  For frontend, please clone and see more details on [myspine-react](https://github.com/DreamTechSyndicate/myspine-react)
+
 ## Scripts
 
 ### Initial Configuration
