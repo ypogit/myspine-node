@@ -7,14 +7,12 @@ import { generateToken } from '../../src/middleware'
 import argon2 from 'argon2'
 
 describe("users controller", () => {
-  let db: Knex;
+  let db: Knex = knex(knexConfig)
   let mockUserId: number = 696
   let token: string = generateToken({ userId: mockUserId })
   let userRoute = '/users'
 
   const truncateDb = async() => {
-    db = knex(knexConfig)
-  
     if (db) {
       await db('users').truncate()
     }
@@ -27,10 +25,13 @@ describe("users controller", () => {
       })
     })
   }
-
+   
   describe("getUsers", () => {
     beforeEach(async() => {
       await truncateDb()
+    })
+
+    afterAll(async() => {
       await terminateServer()
     })
   
@@ -81,6 +82,9 @@ describe("users controller", () => {
   describe("getUserById", () => {
     beforeEach(async() => {
       await truncateDb()
+    })
+
+    afterAll(async() => {
       await terminateServer()
     })
   
@@ -153,6 +157,9 @@ describe("users controller", () => {
   describe("postUser", () => {
     beforeEach(async() => {
       await truncateDb()
+    })
+
+    afterAll(async() => {
       await terminateServer()
     })
   
@@ -219,6 +226,9 @@ describe("users controller", () => {
   describe("putUser", () => {
     beforeEach(async() => {
       await truncateDb()
+    })
+
+    afterAll(async() => {
       await terminateServer()
     })
 
@@ -299,6 +309,9 @@ describe("users controller", () => {
   describe("deleteUser", () => {
     beforeEach(async() => {
       await truncateDb()
+    })
+
+    afterAll(async() => {
       await terminateServer()
     })
 

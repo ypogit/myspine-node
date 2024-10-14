@@ -1,8 +1,6 @@
 import { CorsOptions } from 'cors'
-import 'dotenv/config'
 
 type OriginCallback = (err: Error | null, origin?: boolean) => void
-
 
 export const corsOptions: CorsOptions = {
   origin: (origin, callback: OriginCallback) => {

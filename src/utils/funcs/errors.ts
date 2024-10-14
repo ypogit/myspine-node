@@ -7,12 +7,28 @@ interface CreateErrorOptions {
   error?: Error | unknown
 }
 
-const createError = ({ res, statusCode, message, error }: CreateErrorOptions) => {
-  if (!res.headersSent) {
-    res.status(statusCode).json({ message })
-    console.trace(error ? error : message )
-    throw new Error(message)
+// const createError = ({ res, statusCode, message, error }: CreateErrorOptions) => {
+//   if (!res.headersSent) {
+//     res.status(statusCode).json({ message })
+//     console.trace(error ? error : message )
+//     throw new Error(message)
+//   }
+// }
+
+function createError({ res, statusCode, message, error }: CreateErrorOptions) {
+  if (!error) {
+    error = new Error(message);
   }
+
+  if (!res.headersSent) {
+    res.status(statusCode).json({ message });
+    if (process.env.NODE_ENV === 'test') {
+      // Don't log the error if we're in a test environment
+      return;
+    }
+    console.trace(error ? error : message);
+  }
+  throw new Error(message);
 }
 
 export const BadRequestError = (category: string, res: any, error?: Error | unknown) => {

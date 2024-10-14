@@ -6,13 +6,11 @@ import request from 'supertest'
 import { generateToken } from '../../src/middleware'
 
 describe("sessions controller", () => {
-  let db: Knex;
+  let db: Knex = knex(knexConfig);
   let mockUserId: number = 696
   let token: string = generateToken({ userId: mockUserId })
 
   const truncateDb = async() => {
-    db = knex(knexConfig)
-  
     if (db) {
       await db('users').truncate()
     }
@@ -26,11 +24,14 @@ describe("sessions controller", () => {
     })
   }
 
-  describe.only("login", () => {    
+  describe("login", () => {    
     const loginRoute = '/login'
 
     beforeEach(async() => {
       await truncateDb()
+    })
+
+    afterAll(async() => {
       await terminateServer()
     })
 
@@ -96,8 +97,11 @@ describe("sessions controller", () => {
     const loginRoute = '/login'
     const logoutRoute = '/logout'
   
-    afterEach(async() => {
+    beforeEach(async() => {
       await truncateDb()
+    })
+
+    afterAll(async() => {
       await terminateServer()
     })
 
@@ -143,6 +147,7 @@ describe("sessions controller", () => {
         const signOutRes = await request(app)
           .post(`${logoutRoute}`)
           .send({ userId })
+          .set('Authorization', `Bearer ${signInToken.access_token}`)
           .set('Content-Type', 'application/json')
           .expect(204)
   
