@@ -56,11 +56,11 @@ export const sessions: Controller = {
       const userId = user!.id
       const tokens: Partial<IUserToken> | undefined = await handleLoginTokens(userId, req, res)
       const sessions: SessionData | undefined = await handleSessionData(userId, req, res)
-
+      
       if (tokens && sessions) {
         res.status(201).json({
           message: "Successfully logged in",
-          date: { ...user, ...tokens, sessions }
+          data: { ...user, ...tokens, sessions }
         })
       }
     } catch (err: unknown) {

@@ -1,3 +1,4 @@
+import argon2 from 'argon2'
 import { app, server } from '../../src/server'
 import { User, UserToken } from '../../src/models'
 import knex, { Knex } from 'knex'
@@ -35,25 +36,25 @@ describe("sessions controller", () => {
       await terminateServer()
     })
 
-    it.only("should login and return tokens", async() => {
+    it("should login and return tokens", async() => {
       await User.create({
         email: 'wwhite@msn.com',
-        password: 'ricin'
+        password: await argon2.hash('ricin')
       })
   
       await User.create({
         email: 'pinkman.abq@yahoo.com',
-        password: 'margolis'
+        password: await argon2.hash('margolis')
       })
   
       await User.create({
         email: 'gus@pollohermanos.cl',
-        password: 'laundromat'
+        password: await argon2.hash('laundromat')
       })
   
       const users = await User.readAll()
-      const { id, email, password } = users[1]
-      const payload = { email, password }
+      const { id, email } = users[1]
+      const payload = { email, password: 'margolis' }
       const token = generateToken({ userId: id })
     
       const res: any = await request(app)
@@ -70,15 +71,15 @@ describe("sessions controller", () => {
       expect(userTokenById.access_token).toBeDefined()
       expect(userTokenById.refresh_token).toBeDefined()
 
-      expect(res.body.email).toEqual(payload.email)
-      expect(res.body.access_token).toBeDefined()
-      expect(res.body.refresh_token).toBeDefined()
+      expect(res.body.data.email).toEqual(payload.email)
+      expect(res.body.data.access_token).toBeDefined()
+      expect(res.body.data.refresh_token).toBeDefined()
       
-      expect(res.body.session_data.logged_in).toEqual(true)
-      expect(res.body.session_data.user_id).toEqual(userTokenById.user_id)
+      expect(res.body.data.sessions.logged_in).toEqual(true)
+      expect(res.body.data.sessions.user_id).toEqual(userTokenById.user_id)
     });
   
-    it("should return a 400 Bad Request if missing email/password", async () => {
+    it.only("should return a 400 Bad Request if missing email/password", async () => {
       await truncateDb()
       const res = await request(app)
         .post(loginRoute)
