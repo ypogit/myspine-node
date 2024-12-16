@@ -48,6 +48,7 @@ app.use("/", (
   helmet(helmetOptions)
 ))
 
+// This is for local development only, HTTPS will be handled by NGINX
 // export const server = https.createServer(credentials, app);
 export const server = http.createServer(app)
 
