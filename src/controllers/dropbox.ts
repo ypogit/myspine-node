@@ -50,14 +50,18 @@ export const dropbox: Controller = {
           // Extract the access token from the response
         const { access_token, refresh_token, expires_in } = response.data;
 
+        if (!access_token) {
+          return BadRequestError("Failed to retrieve access token.", res);
+        }
+
           // Send back the access token and any other necessary data to the frontend
-        res.status(200).json({
-          access_token,
-          refresh_token,
-          expires_in,
-        })
+        res.status(200).json({ access_token, refresh_token, expires_in })
       }
-    } catch (err: unknown) {
+    } catch (err: any) {
+      if (err.response && err.response.status === 401) {
+        return BadRequestError("Invalid authorization code.", res);
+      }
+
       InternalServerError("get", "dropbox access token", res, err)
     }
   }
