@@ -52,7 +52,7 @@ export const ExternalServerError = (category: string, res: any, error?: Error | 
 }
 
 export const InternalServerError = (
-  method: "get" | "create" | "update" | "delete" | "destroy" | "login" | "logout" | "auth",
+  method: "read" | "create" | "update" | "delete" | "destroy" | "login" | "logout" | "auth",
   category: string, 
   res: any,
   error?: Error | unknown

@@ -62,7 +62,7 @@ export const dropbox: Controller = {
         return BadRequestError("Invalid authorization code.", res);
       }
 
-      InternalServerError("get", "dropbox access token", res, err)
+      InternalServerError("read", "dropbox access token", res, err)
     }
   }
 }

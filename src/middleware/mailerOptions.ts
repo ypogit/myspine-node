@@ -54,7 +54,7 @@ const mailTemplates: MailTemplates = {
   },
   appointment_requested: {
     to: { email: SMTP_EMAIL! },
-    subject: "Request for Appointment"
+    subject: "Request for Consultation"
   },
 };
 
