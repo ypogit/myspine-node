@@ -21,21 +21,17 @@ export const dropbox: Controller = {
       let session = await Session.readById(req.sessionID)
       const parsedSession = JSON.parse(session.sess)
 
-      console.log('sessionId:', req.sessionID)
-      console.log('stored session:', session)
-
       if (!parsedSession.state) {
         state = crypto.randomBytes(16).toString('hex');
         req.session.state = state;
         req.session.save((err: unknown) => {
           if (err) {
-            console.error("Error saving session:", err)
+            console.error("Error saving session: ", err)
           } else {
-            console.log("Session saved successfully:", req.session.state);
+            console.log("Session saved successfully!");
           }
         });
       } else {
-        console.log('stored session state:', parsedSession.state)
         state = parsedSession.state
       }
 

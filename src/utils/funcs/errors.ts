@@ -7,15 +7,7 @@ interface CreateErrorOptions {
   error?: Error | unknown
 }
 
-// const createError = ({ res, statusCode, message, error }: CreateErrorOptions) => {
-//   if (!res.headersSent) {
-//     res.status(statusCode).json({ message })
-//     console.trace(error ? error : message )
-//     throw new Error(message)
-//   }
-// }
-
-function createError({ res, statusCode, message, error }: CreateErrorOptions) {
+const createError = ({ res, statusCode, message, error }: CreateErrorOptions) => {
   if (!error) {
     error = new Error(message);
   }
