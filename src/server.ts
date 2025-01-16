@@ -34,9 +34,10 @@ const port = process.env.PORT
 
 app.use(express.json())
 app.use(cors(corsOptions))
-app.use("/login", (
-  session(sessionOptions)
-))
+// app.use("/login", (
+//   session(sessionOptions)
+// ))
+app.use(session(sessionOptions))
 
 routes.forEach(({ path, router }) => {
   app.use(path, router)

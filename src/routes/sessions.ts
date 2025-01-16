@@ -9,6 +9,4 @@ router.post('/logout/:userId', sessions.logout)
 router.post('/password/forgot', sessions.forgotPassword)
 router.post('/password/reset', sessions.resetPassword)
 
-
-
 export { router as sessionsRouter }

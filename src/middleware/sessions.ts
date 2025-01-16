@@ -15,20 +15,26 @@ type SessionStoreOptions = {
 
 type SessionOptions = {
   secret: string,
-  genid: () => string,
+  genid?: () => string,
   cookie: {
     secure: boolean,
-    maxAge: number
+    maxAge: number,
+    httpOnly: boolean,
+    path: string,
+    sameSite: boolean | "none" | "strict" | "lax" | undefined
   },
   saveUninitialized: boolean,
   resave: boolean,
   store: any
 }
 
-const SQLiteStore = BetterSQLite3SessionStore(session)
+const SQLiteStore = BetterSQLite3SessionStore(session, {
+  table: 'sessions',
+  createTable: true // Ensures timestamps on row creation
+})
 const sessionsDb = new BetterSQLite3(knexConfig.connection.filename)
 const sessionSecret =  process.env.SESSION_SECRET || crypto.randomBytes(64).toString('hex')
-const sessionId = crypto.randomBytes(16).toString('hex')
+// const sessionId = crypto.randomBytes(16).toString('hex')
 
 export const sessionStoreOptions: SessionStoreOptions = {
   client: sessionsDb,
@@ -41,15 +47,19 @@ export const sessionStoreOptions: SessionStoreOptions = {
 // At the time of this annotation, many default values for express-session have been deprecated
 export const sessionOptions: SessionOptions = {
   secret: sessionSecret,
-  genid: () => sessionId,
+  // TODO: maybe put back after testing with Dropbox OAuth
+  // genid: () => sessionId,
   cookie: {
-    secure: true, // Using HTTPS
+    secure: process.env.NODE_ENV === 'production', // Using HTTPS in prod only
     maxAge: Number(process.env.SESSION_COOKIE_MAX_AGE) 
-      || 24 * 60 * 60 * 1000  // Expires in 1 day or 864000000ms
+      || 24 * 60 * 60 * 1000,  // Expires in 1 day or 864000000ms
+    httpOnly: true,
+    path: '/',
+    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax'
   },
-  saveUninitialized: false, //  No cookies on a response with an uninitialized session
+  saveUninitialized: true, //  No cookies on a response with an uninitialized session
   resave: false, // Force save the unmodified session to the session store
-  store: new SQLiteStore(sessionStoreOptions)
+  store: new SQLiteStore(sessionStoreOptions),
 }
 
 export const handleSessionData = async(userId: number, req: any, _res: any) => {
