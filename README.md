@@ -57,14 +57,13 @@ For development and production stages
 ## Other devDependencies
 For development stage
 
-1. **ajv** : JSON schema validator
-2. **better-sqlite3-session-store** : Session-store for express-session in SQLite DB
-3. **dotenv** : Environment loading module 
-4. **http-terminator** : Graceful http servers termination logic
-5. **Prettier** : Opinionated formatter for code consistency and style
-6. **eslint** : Guidelines for code convention and style
-7. **eslint-plugin-prettier** : Prettier as a linter rule
-8. **eslint-config-prettier** : Prettier without linter rule conflicts
-9. **supertest** : Node.js HTTP requests-responses testing libary
-10. **ts-jest** : Typescript processor with source map support for Jest
-11. **babel-jest** : JavaScript Transformer for Jest using Babel
+1. **better-sqlite3-session-store** : Session-store for express-session in SQLite DB
+2. **dotenv** : Environment loading module 
+3. **http-terminator** : Graceful http servers termination logic
+4. **Prettier** : Opinionated formatter for code consistency and style
+5. **eslint** : Guidelines for code convention and style
+6. **eslint-plugin-prettier** : Prettier as a linter rule
+7. **eslint-config-prettier** : Prettier without linter rule conflicts
+8. **supertest** : Node.js HTTP requests-responses testing libary
+9. **ts-jest** : Typescript processor with source map support for Jest
+10. **babel-jest** : JavaScript Transformer for Jest using Babel

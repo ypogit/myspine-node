@@ -1,8 +1,6 @@
 import cors from 'cors'
 import express, { Application } from 'express'
-// import fs from 'fs'
 import helmet from 'helmet'
-// import https from 'https'
 import http from 'http'
 import knex from "knex"
 import knexConfig from "../knexfile"
@@ -20,23 +18,14 @@ import {
 
 export const app: Application = express()
 
-// const credentials = {
-//   key: fs.readFileSync(process.env.PRIVATE_KEY_PATH 
-//     || './certs/local-key.pem', 'utf8'),
-//   cert: fs.readFileSync(process.env.CERTIFICATE_PATH 
-//     || './certs/local-cert.pem', 'utf8')
-// }
-
 const db = knex(knexConfig)
-const dev_env = 'development'
+const dev_env = process.env.NODE_ENV || 'development'
 const env = process.env.NODE_ENV
-const port = process.env.PORT
+const port = process.env.PORT || 3000
 
+// Applied following middleware before routes to ensure handling before requests
 app.use(express.json())
 app.use(cors(corsOptions))
-// app.use("/login", (
-//   session(sessionOptions)
-// ))
 app.use(session(sessionOptions))
 
 routes.forEach(({ path, router }) => {
@@ -49,12 +38,11 @@ app.use("/", (
   helmet(helmetOptions)
 ))
 
-// This is for local development only, HTTPS will be handled by NGINX
-// export const server = https.createServer(credentials, app);
+// This is for local development only, incoming HTTPS requests will be handled by NGINX
 export const server = http.createServer(app)
 
 const teardown = async() => {
-  const tables = ['users', 'user_tokens', 'patients']
+  const tables = ['users', 'user_tokens', 'customers']
   try {
     console.log('Starting teardown')
     if (env === dev_env) {
