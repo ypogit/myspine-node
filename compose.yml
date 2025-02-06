@@ -1,0 +1,32 @@
+version: "3.8"
+
+services:
+  dev:
+    image: poms-dev
+    build:
+      context: .
+      target: development
+    secrets:
+      - poms-env
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+    command: ["sh", "-c", "cp /run/secrets/poms-env .env && nodemon --experimental-specifier-resolution=node"]
+
+  prod:
+    image: poms
+    build:
+      context: .
+      target: production
+    secrets:
+      - poms-env
+    ports:
+      - "4000:3001"
+    environment:
+      - NODE_ENV=production
+    command: ["sh", "-c", "cp /run/secrets/poms-env .env && node --experimental-specifier-resolution=node dist/src/server.js"]
+
+secrets:
+  poms-env:
+    external: true
