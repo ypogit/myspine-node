@@ -1,5 +1,4 @@
 import crypto from 'crypto'
-import fs from 'fs'
 import jwt, { SignOptions } from 'jsonwebtoken'
 import { 
   InternalServerError,
@@ -10,37 +9,28 @@ import { UserToken, IUserToken } from '../models'
 import { JwtPayload } from 'src/utils/types/generic'
 import argon2 from 'argon2'
 
-export const privateKey = crypto.createPrivateKey({
-  key: fs.readFileSync(process.env.PRIVATE_KEY_PATH 
-    || './certs/local-key.pem', 'utf8'),
-  format: 'pem'
-})
-
-const publicKey = crypto.createPublicKey({
-  key: fs.readFileSync(process.env.PRIVATE_KEY_PATH
-  || './certs/local-key.pem', 'utf-8'),
-  format: 'pem'
-})
+const secret = process.env.JWT_SECRET || crypto.randomBytes(64).toString('hex')
 
 export const generateToken = ({ userId, expiresIn }: { userId: number, expiresIn?: string }) => {
   const payload =  { id: v4(), userId }
   const options: SignOptions = { 
-    algorithm: 'RS256', 
+    algorithm: 'HS256', 
     expiresIn: expiresIn || '1h'
   }
 
-  return jwt.sign(payload, privateKey, options)
+  const token = jwt.sign(payload, secret, options)
+  return token
 }
 
 export const verifyToken = async (token: string): Promise<JwtPayload> => {
   return await new Promise<JwtPayload>((resolve, reject) => {
-    jwt.verify(token, publicKey, (err, decoded) => {
+    jwt.verify(token, secret, (err, verifiedToken) => {
       if (err) {
-        err.name === 'JsonWebTokenError' && err.message === 'invalid signature' ?
-          reject(new Error('Invalid token signature')) :
-          reject(err)
+        err.name === 'JsonWebTokenError' && err.message === 'invalid signature' 
+          ? reject(new Error('Invalid token signature')) 
+          : reject(err)
       }
-      resolve(decoded as JwtPayload);
+      resolve(verifiedToken as JwtPayload);
     })
   })
 }
@@ -57,23 +47,35 @@ export const generateResetToken = async() => {
   }
 }
 
-export const requireJwt = async(req: any, res: any, next: any) => {
+export const requireJwt = async (req: any, res: any, next: any) => {
   try {
-    const authorizationHeader = req.headers.authorization
-    
-    if (!authorizationHeader) {
-      throw new Error('Authorization header is missing')
+    let token = req.headers.authorization ? req.headers.authorization.split(' ')[1] : null;
+
+    // If not in header, check for cookies
+    if (!token) {
+      token = req.cookies.token;
     }
 
-    const token = authorizationHeader.split(' ')[1]
-    const decoded = await verifyToken(token)
+    if (!token) {
+      throw new Error('No token provided');
+    }
 
-    req.user = decoded
-    next()
-  } catch(err) {
-    UnauthorizedRequestError('token', res, err)
+    const verifiedToken = await verifyToken(token);
+
+    // Use the actual token string not the decoded & verified payload
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'Strict',
+      maxAge: 3600000 
+    });
+  
+    req.user = verifiedToken;
+    next();
+  } catch (err) {
+    UnauthorizedRequestError('token', res, err);
   }
-}
+};
 
 export const handleLoginTokens = async(userId: number, _req: any, res: any): Promise<Partial<IUserToken> | undefined> => {
   const accessToken = generateToken({ userId, expiresIn: '15m' }) 

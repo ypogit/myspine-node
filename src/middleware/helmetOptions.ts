@@ -4,9 +4,11 @@ export const helmetOptions: HelmetOptions = {
   contentSecurityPolicy: {
     // Mitigate XXS and others attacks
     directives: {
-      scriptSrc: ["'self'", "'unsafe-inline'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      mediaSrc: ["'self'"]
+      // Only page load scripts with a matching none value are allowed to execute
+      scriptSrc: ["'self'", "'nonce-<random>'"],
+      styleSrc: ["'self'", "'nonce-<random>'"],
+      mediaSrc: ["'self'"],
+      frameAncestors: ["'self'"]
     }
   },
   crossOriginEmbedderPolicy: { policy: 'require-corp' },
@@ -25,6 +27,9 @@ export const helmetOptions: HelmetOptions = {
     preload: true // Add HSTS policy to browser
   },
   xPoweredBy: false, // Remove xPowered by that Express.js sets by default and obscure tech stack slowing down the recon phase of the attack
+  xFrameOptions: {
+    action: 'sameorigin'
+  }
 }
 
 /**
