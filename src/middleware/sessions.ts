@@ -4,6 +4,7 @@ import session from 'express-session'
 import BetterSQLite3 from 'better-sqlite3'
 import BetterSQLite3SessionStore from 'better-sqlite3-session-store'
 import { SessionData } from '../utils/types/express-session'
+import { SessionOptions } from 'express-session'
 
 type SessionStoreOptions = {
   client: any,
@@ -13,20 +14,20 @@ type SessionStoreOptions = {
   }
 }
 
-type SessionOptions = {
-  secret: string,
-  genid?: () => string,
-  cookie: {
-    secure: boolean,
-    maxAge: number,
-    httpOnly: boolean,
-    path: string,
-    sameSite: boolean | "none" | "strict" | "lax" | undefined
-  },
-  saveUninitialized: boolean,
-  resave: boolean,
-  store: any
-}
+// type SessionOptions = {
+//   secret: string,
+//   genid?: () => string,
+//   cookie: {
+//     secure: boolean,
+//     maxAge: number,
+//     httpOnly: boolean,
+//     path: string,
+//     sameSite: boolean | "none" | "strict" | "lax" | undefined
+//   },
+//   saveUninitialized: boolean,
+//   resave: boolean,
+//   store: any
+// }
 
 const SQLiteStore = BetterSQLite3SessionStore(session, {
   table: 'sessions',

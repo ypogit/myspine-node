@@ -15,6 +15,7 @@ import {
   sessionOptions,
   requireJwt
 } from './middleware'
+import { RequestHandler } from 'express'
 
 export const app: Application = express()
 
@@ -26,7 +27,7 @@ const port = process.env.PORT || 3000
 // Applied following middleware before routes to ensure handling before requests
 app.use(express.json())
 app.use(cors(corsOptions))
-app.use(session(sessionOptions))
+app.use(session(sessionOptions) as RequestHandler)
 
 routes.forEach(({ path, router }) => {
   app.use(path, router)
