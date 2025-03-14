@@ -11,11 +11,11 @@ import argon2 from 'argon2'
 
 const secret = process.env.JWT_SECRET || crypto.randomBytes(64).toString('hex')
 
-export const generateToken = ({ userId, expiresIn }: { userId: number, expiresIn?: string }) => {
-  const payload =  { id: v4(), userId }
+export const generateToken = ({ userId, expiresIn }: { userId: number; expiresIn?: SignOptions['expiresIn'] }) => {
+  const payload = { id: v4(), userId }
   const options: SignOptions = { 
     algorithm: 'HS256', 
-    expiresIn: expiresIn || '1h'
+    expiresIn: expiresIn || '1h'  // Ensures TypeScript accepts the type
   }
 
   const token = jwt.sign(payload, secret, options)
@@ -35,7 +35,7 @@ export const verifyToken = async (token: string): Promise<JwtPayload> => {
   })
 }
 
-export const generateResetToken = async() => {
+export const generateResetToken = async () => {
   const resetToken = crypto.randomBytes(20).toString('hex')
   const expirationDate = new Date()
 
@@ -77,7 +77,7 @@ export const requireJwt = async (req: any, res: any, next: any) => {
   }
 };
 
-export const handleLoginTokens = async(userId: number, _req: any, res: any): Promise<Partial<IUserToken> | undefined> => {
+export const handleLoginTokens = async (userId: number, _req: any, res: any): Promise<Partial<IUserToken> | undefined> => {
   const accessToken = generateToken({ userId, expiresIn: '15m' }) 
   const refreshToken = generateToken({ userId, expiresIn: '1d' }) // Stay logged-in
   
@@ -112,7 +112,7 @@ export const handleLoginTokens = async(userId: number, _req: any, res: any): Pro
   }
 }
 
-export const handleLogoutTokens = async(userId: number, res: any) => {
+export const handleLogoutTokens = async (userId: number, res: any) => {
   try {
     const userToken = await UserToken.readByUserId(userId)
 
